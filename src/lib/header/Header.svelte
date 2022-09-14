@@ -5,7 +5,7 @@
 
 <header>
 	<div class="corner">
-		<a href="https://kit.svelte.dev">
+		<a href="/">
 			<img src={logo} alt="logo" />
 		</a>
 	</div>
@@ -18,11 +18,19 @@
 			<li class:active={$page.url.pathname === '/about'}>
 				<a href="/about">About</a>
 			</li>
+			<li class:active={$page.url.pathname === '/projects'}>
+				<a href="/projects">Projects</a>
+			</li>
+			<li class:active={$page.url.pathname === '/blog'}>
+				<a href="/blog">Blog</a>
+			</li>
+			<li class:active={$page.url.pathname === '/contact'}>
+				<a href="/contact">Contact</a>
+			</li>
 		</ul>
 	</nav>
 
 	<div class="corner">
-		<!-- TODO put something else here? github link? -->
 	</div>
 </header>
 
