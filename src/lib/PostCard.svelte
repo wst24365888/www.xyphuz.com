@@ -31,6 +31,7 @@
 
 	.post-card:hover {
 		border: 1px solid #000;
+		cursor: pointer;
 	}
 
 	.card-info {
