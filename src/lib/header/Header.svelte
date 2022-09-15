@@ -10,7 +10,7 @@
 		</a>
 	</div>
 
-	<nav data-sveltekit-prefetch>
+	<nav>
 		<ul>
 			<li class:active={$page.url.pathname === '/'}>
 				<a href="/">Home</a>
@@ -100,7 +100,7 @@
 		height: 100%;
 		align-items: center;
 		padding: 0 1em;
-		color: var(--heading-color);
+		color: rgba(0, 0, 0, 0.7);;
 		font-weight: 700;
 		font-size: 0.8rem;
 		text-transform: uppercase;

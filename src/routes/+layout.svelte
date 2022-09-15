@@ -13,4 +13,10 @@
 </footer>
 
 <style>
+	:global(body) {		
+		margin: 0;
+		padding: 0;
+		font-family: "Montserrat", sans-serif;
+		line-height: 1.5;
+	}
 </style>
