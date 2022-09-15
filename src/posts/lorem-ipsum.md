@@ -56,3 +56,5 @@ function fancyAlert(arg) {
 	}
 }
 ```
+
+![landscape](/posts/lorem-ipsum/landscape.jpg)
