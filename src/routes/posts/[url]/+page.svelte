@@ -30,4 +30,10 @@
             width: 50%;
         }
     }
+
+    @media (orientation: portrait) {
+        :global(h1) {
+            font-size: 2em;
+        }
+    }
 </style>

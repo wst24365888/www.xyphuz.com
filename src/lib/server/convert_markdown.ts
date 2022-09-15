@@ -8,6 +8,7 @@ import rehypeStringify from "rehype-stringify";
 import type { MDAttributes } from "src/models/md_attributes";
 import type { Post } from "src/models/post";
 import remarkParse from "remark-parse";
+import remarkGfm from "remark-gfm";
 
 export function convertMarkdown(path: string): Post {
 	let file = fs.readFileSync(path, "utf8");
@@ -21,6 +22,7 @@ export function convertMarkdown(path: string): Post {
 
 	let result = unified()
 		.use(remarkParse)
+		.use(remarkGfm)
 		.use(remarkRehype)
 		.use(rehypePrismPlus)
 		.use(rehypeRaw)
