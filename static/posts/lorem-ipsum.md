@@ -1,6 +1,7 @@
 ---
 title: title
 description: description
+date: 2022-09-15
 ---
 
 # Est densi caliturasque curvi praeterit ceram dictis

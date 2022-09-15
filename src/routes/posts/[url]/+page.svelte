@@ -6,7 +6,7 @@
 
 <section>
     <article>
-        <h1>{data.post.mdAttributes.title}</h1>
+        <h1 id="title">{data.post.mdAttributes.title}</h1>
         {@html data.post.html}
     </article>
 </section>
@@ -20,6 +20,11 @@
     
 	article :global(img) {
         max-width: 100%;
+	}    
+
+	#title {
+		margin-top: 1vh;
+		margin-bottom: 4vh;
 	}
 
     @media (orientation: landscape) {
