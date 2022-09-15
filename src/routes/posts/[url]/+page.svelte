@@ -15,13 +15,10 @@
     section {
         display: flex;
         justify-content: center;
-    }
-
-    article {
         padding: 4vw;
     }
     
-	:global(img) {
+	article :global(img) {
         max-width: 100%;
 	}
 
@@ -29,10 +26,18 @@
         article {
             width: 50%;
         }
+        
+        article :global(h1) {
+            font-size: 2.4rem;
+        }
     }
 
     @media (orientation: portrait) {
-        :global(h1) {
+        article {
+            width: 100%;
+        }
+
+        article :global(h1) {
             font-size: 2em;
         }
     }

@@ -20,12 +20,6 @@ strong {
 	font-weight: 600;
 }
 
-@media (min-width: 720px) {
-	h1 {
-		font-size: 2.4rem;
-	}
-}
-
 pre {
 	overflow-x: auto;
 }

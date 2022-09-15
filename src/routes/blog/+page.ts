@@ -5,7 +5,5 @@ export async function load({ fetch }: { fetch: (info: RequestInfo, init?: Reques
 		res.json(),
 	);
 
-	console.log(posts.length);
-
 	return { posts };
 }

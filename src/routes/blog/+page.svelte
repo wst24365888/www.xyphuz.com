@@ -6,19 +6,49 @@
 </script>
 
 <section>
-    <h1>Posts</h1>
+    <div id="container">
+        <h1>Posts</h1>
 
-    {#each data.posts as post}
-        <PostCard {post}/>
-    {/each}
+        {#each data.posts as post}
+            <PostCard {post}/>
+            <div class="divider"></div>
+        {/each}
+    </div>
 </section>
 
-<style>
+<style>    
     section {
         display: flex;
-        flex-direction: column;
-        align-items: center;
         justify-content: center;
-        height: calc(100vh - 5em);
+        padding: 4vw;
+    }
+
+    h1 {
+        margin-top: 1vh;
+        margin-bottom: 4vh;
+    }
+
+    .divider {
+        height: 2vh;
+    }
+
+    @media (orientation: landscape) {
+        #container {
+            width: 50%;
+        }
+
+        #container :global(h1) {
+            font-size: 2.4rem;
+        }
+    }
+
+    @media (orientation: portrait) {
+        #container {
+            width: 100%;
+        }
+
+        #container :global(h1) {
+            font-size: 2em;
+        }
     }
 </style>
