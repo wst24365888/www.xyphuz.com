@@ -57,4 +57,4 @@ function fancyAlert(arg) {
 }
 ```
 
-![landscape](/posts/lorem-ipsum/landscape.jpg)
+![landscape](lorem-ipsum/landscape.jpg)

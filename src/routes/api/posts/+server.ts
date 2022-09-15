@@ -2,7 +2,7 @@ import { importPosts } from "$lib/server/import_posts";
 import type { PostPreview } from "src/models/post_preview";
 
 export async function GET(): Promise<Response> {
-	const postFiles = importPosts("src/posts/");
+	const postFiles = importPosts("static/posts/**/*.md");
 
 	const posts: PostPreview[] = postFiles.map((file) => {
 		return {
