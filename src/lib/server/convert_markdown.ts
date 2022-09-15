@@ -11,8 +11,8 @@ import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 
 export function convertMarkdown(path: string): Post {
-	let file = fs.readFileSync(path, "utf8");
-	let {
+	const file = fs.readFileSync(path, "utf8");
+	const {
 		attributes,
 		body,
 	}: {
@@ -20,7 +20,7 @@ export function convertMarkdown(path: string): Post {
 		body: string;
 	} = fm(file);
 
-	let result = unified()
+	const result = unified()
 		.use(remarkParse)
 		.use(remarkGfm)
 		.use(remarkRehype)
