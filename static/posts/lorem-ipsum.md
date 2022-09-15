@@ -2,6 +2,7 @@
 title: title
 description: description
 date: 2022-09-15
+tags: ["test", "lorem-ipsum"]
 ---
 
 # Est densi caliturasque curvi praeterit ceram dictis

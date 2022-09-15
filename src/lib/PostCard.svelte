@@ -9,16 +9,27 @@
 		day: 'numeric'
 	});
 
-	function handleClick() {
+	function onPostClick() {
 		goto(post.url);
+	}
+
+	function onTagClick(tag: string) {
+		goto(`/tags/${tag}`);
 	}
 </script>
 
-<div class="post-card" on:click="{handleClick}">
+<div class="post-card" on:click="{onPostClick}">
 	<h1>{post.mdAttributes.title}</h1>
+	<p>{post.mdAttributes.description}</p>
 	<div class="card-info">
-		<p>{post.mdAttributes.description}</p>
-		<p>{dateString}</p>
+		<div class="tags">
+			{#each post.mdAttributes.tags as tag}
+				<div class="tag" on:click|stopPropagation={() => onTagClick(tag)}>
+					# {tag}
+				</div>
+			{/each}
+		</div>
+		<p class="date-string">{dateString}</p>
 	</div>
 </div>
 
@@ -37,6 +48,29 @@
 	.card-info {
 		display: flex;
 		justify-content: space-between;
+	}
+
+	.tags {
+		width: 60%;
+		display: inline-flex;
+		align-items: center;
+	}
+
+	.tag {
+		margin-right: 1em;
+		background-color: #eee;
+		padding: 0.25em 0.5em;
+    	transition: 0.5s;
+	}
+
+	.tag:hover {
+		background-color: #ccc;
+	}
+
+	.date-string {
+		width: 40%;
+		display: inline-flex;
+		justify-content: flex-end;
 	}
 
 	h1 {

@@ -32,7 +32,7 @@ export function convertMarkdown(path: string): Post {
 
 	return {
 		mdAttributes: attributes,
-		url: path.replace("static/", "").replace(".md", ""),
+		url: path.replace("static", "").replace(".md", ""),
 		html: result,
 	};
 }
