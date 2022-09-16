@@ -20,16 +20,16 @@
     section {
         display: flex;
         justify-content: center;
-        padding: 4vh 4vw;
+        padding: 2em 4vw;
     }
 
     h1 {
-        margin-top: 1vh;
-        margin-bottom: 4vh;
+        margin-top: 0.25em;
+        margin-bottom: 1.25em;
     }
 
     .divider {
-        height: 2vh;
+        height: 1.5em;
     }
 
     @media (orientation: landscape) {

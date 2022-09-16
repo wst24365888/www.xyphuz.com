@@ -2,11 +2,18 @@
     import type { PageData } from './$types';
 
 	export let data: PageData;
+	$: dateString = new Date(data.post.attributes.date).toLocaleDateString('en-US', {
+		year: 'numeric',
+		month: 'long',
+		day: 'numeric'
+	});
 </script>
 
 <section>
     <article>
         <h1 id="title">{data.post.attributes.title}</h1>
+        <div id="date">{dateString}</div>
+        <hr>
         {@html data.post.html}
     </article>
 </section>
@@ -15,17 +22,22 @@
     section {
         display: flex;
         justify-content: center;
-        padding: 4vh 4vw;
+        padding: 2em 4vw;
     }
     
 	article :global(img) {
         max-width: 100%;
-	}    
+	}
 
 	#title {
-		margin-top: 1vh;
-		margin-bottom: 4vh;
+        margin-top: 0.25em;
+        margin-bottom: 1.25em;
 	}
+
+    hr {
+		margin-top: 1.2em;
+        border: 1px solid #eee;
+    }
 
     @media (orientation: landscape) {
         article {

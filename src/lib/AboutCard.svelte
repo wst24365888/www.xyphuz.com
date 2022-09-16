@@ -35,8 +35,7 @@
 	}
 
 	h1 {
-		margin-top: 3vh;
-		margin-bottom: 3vh;
+		margin-top: 0.75em 0;
 	}
 
 	p {

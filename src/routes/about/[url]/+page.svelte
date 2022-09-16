@@ -10,7 +10,7 @@
     const splideOptions: Options = {
         type: "loop",
         width: "100%",
-        height: "40vh",
+        height: "25em",
         autoWidth: true,
         focus: "center",
         autoplay: true,
@@ -18,29 +18,23 @@
         speed: 1000,
         lazyLoad: true,
     };
-
-    let imageHeight = 0;
-
-    onMount(() => {
-        imageHeight = window.innerHeight * 0.4;
-    });
 </script>
 
 <section>
-    {#if imageHeight != 0}
-        <Splide options={splideOptions}>
-            {#each data.about.attributes.photoUrls as photoUrl}
-                <SplideSlide>
-                    <img src={photoUrl} alt="{photoUrl}" style="height: {imageHeight}px" />
-                </SplideSlide>
-            {/each}
-        </Splide>
-    {/if}
+    <Splide options={splideOptions}>
+        {#each data.about.attributes.photoUrls as photoUrl}
+            <SplideSlide>
+                <img src={photoUrl} alt="{photoUrl}" style="height: 25em" />
+            </SplideSlide>
+        {/each}
+    </Splide>
 
-    <article>
-        <h1 id="title">{data.about.attributes.title}</h1>
-        {@html data.about.html}
-    </article>
+    <div id="article-container">
+        <article>
+            <h1 id="title">{data.about.attributes.title}</h1>
+            {@html data.about.html}
+        </article>
+    </div>
 </section>
 
 <style>
@@ -51,8 +45,12 @@
         align-items: center;
     }
 
-    article {
-        padding: 6vh 4vw 4vh 4vw;
+    #article-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 4em 4vw 2em 4vw;
     }
     
 	article :global(img) {
@@ -60,8 +58,8 @@
 	}    
 
 	#title {
-		margin-top: 1vh;
-		margin-bottom: 4vh;
+        margin-top: 0.25em;
+        margin-bottom: 1.25em;
 	}
 
     @media (orientation: landscape) {
