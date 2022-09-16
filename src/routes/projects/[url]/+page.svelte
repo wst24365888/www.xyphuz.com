@@ -89,4 +89,13 @@
             font-size: 2rem;
         }
     }
+
+    :global(.splide__slide) {
+        opacity: 0.2;
+        transition: all 0.25s ease-in-out;
+    }
+
+    :global(.splide__slide.is-active) {
+        opacity: 1;
+    }
 </style>
