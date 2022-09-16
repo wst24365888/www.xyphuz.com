@@ -32,5 +32,6 @@
 		padding: 0;
 		font-family: "Montserrat", sans-serif;
 		line-height: 1.75;
+		overflow-y: overlay;
 	}
 </style>
