@@ -22,7 +22,7 @@
 
 <section>
     <Splide options={splideOptions}>
-        {#each data.about.attributes.photoUrls as photoUrl}
+        {#each data.project.attributes.photoUrls as photoUrl}
             <SplideSlide>
                 <img src={photoUrl} alt="{photoUrl}" style="height: 25em" />
             </SplideSlide>
@@ -31,12 +31,10 @@
 
     <div id="article-container">
         <article>
-            <h1 id="title">{data.about.attributes.title}</h1>
-            {#if data.about.attributes.dateString}
-                <div id="date">{data.about.attributes.dateString}</div>
-            {/if}
+            <h1 id="title">{data.project.attributes.title}</h1>
+            <div id="date">{data.project.attributes.dateString}</div>
             <hr>
-            {@html data.about.html}
+            {@html data.project.html}
         </article>
     </div>
 </section>

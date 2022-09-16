@@ -19,7 +19,7 @@
 </script>
 
 <div class="post-card" on:click="{onPostClick}">
-	<h1>{post.attributes.title}</h1>
+	<h2>{post.attributes.title}</h2>
 	<p>{post.attributes.description}</p>
 	<div class="card-info">
 		<div class="tags">
@@ -73,7 +73,7 @@
 		justify-content: flex-end;
 	}
 
-	h1 {
+	h2 {
 		margin-top: 0.75em 0;
 	}
 

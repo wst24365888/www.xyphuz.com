@@ -1,30 +1,30 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import type { AboutPreview } from 'src/models/about_preview';
+	import type { ProjectPreview } from 'src/models/project_preview';
 
-	export let about: AboutPreview;
+	export let project: ProjectPreview;
 
-	function onAboutClick() {
-		goto(about.url);
+	function onProjectClick() {
+		goto(project.url);
 	}
 </script>
 
-<div class="about-card" on:click="{onAboutClick}">
-	<h2>{about.attributes.title}</h2>
+<div class="project-card" on:click="{onProjectClick}">
+	<h2>{project.attributes.title}</h2>
 	<div class="card-info">
-        <p>{about.attributes.description}</p>
-		<p>{about.attributes.dateString ?? ""}</p>
+        <p>{project.attributes.description}</p>
+		<p>{project.attributes.dateString ?? ""}</p>
 	</div>
 </div>
 
 <style>
-	.about-card {
+	.project-card {
 		padding: 0.75em 1.5em;
 		border: 1px solid #ccc;
     	transition: 0.5s;
 	}
 
-	.about-card:hover {
+	.project-card:hover {
 		border: 1px solid #000;
 		cursor: pointer;
 	}
