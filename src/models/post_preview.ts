@@ -1,6 +1,6 @@
-import type { MDAttributes } from "./md_attributes";
+import type { PostAttributes } from "./post_attributes";
 
 export interface PostPreview {
-	mdAttributes: MDAttributes;
+	attributes: PostAttributes;
 	url: string;
 }

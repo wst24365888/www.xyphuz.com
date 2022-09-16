@@ -1,4 +1,4 @@
-export interface MDAttributes {
+export interface PostAttributes {
 	title: string;
 	description: string;
 	date: string;

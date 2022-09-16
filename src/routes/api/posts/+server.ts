@@ -1,12 +1,13 @@
-import { importPosts } from "$lib/server/import_posts";
+import { convertMarkdownToPost } from "$lib/server/convert_md_to_post";
+import { importMDs } from "$lib/server/import_mds";
 import type { PostPreview } from "src/models/post_preview";
 
 export async function GET(): Promise<Response> {
-	const postFiles = importPosts("static/posts/**/*.md");
+	const postFiles = importMDs("static/posts/**/*.md", convertMarkdownToPost);
 
 	const posts: PostPreview[] = postFiles.map((file) => {
 		return {
-			mdAttributes: file.mdAttributes,
+			attributes: file.attributes,
 			url: file.url,
 		};
 	});

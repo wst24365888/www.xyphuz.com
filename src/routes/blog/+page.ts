@@ -8,7 +8,7 @@ export async function load({
 	let posts: PostPreview[] = await fetch("/api/posts").then((res) => res.json());
 
 	posts = posts.sort((a, b) => {
-		return new Date(b.mdAttributes.date).getTime() - new Date(a.mdAttributes.date).getTime();
+		return new Date(b.attributes.date).getTime() - new Date(a.attributes.date).getTime();
 	});
 
 	return { posts };

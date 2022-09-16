@@ -6,7 +6,7 @@
 
 <section>
     <article>
-        <h1 id="title">{data.post.mdAttributes.title}</h1>
+        <h1 id="title">{data.post.attributes.title}</h1>
         {@html data.post.html}
     </article>
 </section>

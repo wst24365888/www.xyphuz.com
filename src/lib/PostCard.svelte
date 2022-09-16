@@ -3,7 +3,7 @@
 	import type { PostPreview } from 'src/models/post_preview';
 
 	export let post: PostPreview;
-	$: dateString = new Date(post.mdAttributes.date).toLocaleDateString('en-US', {
+	$: dateString = new Date(post.attributes.date).toLocaleDateString('en-US', {
 		year: 'numeric',
 		month: 'long',
 		day: 'numeric'
@@ -19,11 +19,11 @@
 </script>
 
 <div class="post-card" on:click="{onPostClick}">
-	<h1>{post.mdAttributes.title}</h1>
-	<p>{post.mdAttributes.description}</p>
+	<h1>{post.attributes.title}</h1>
+	<p>{post.attributes.description}</p>
 	<div class="card-info">
 		<div class="tags">
-			{#each post.mdAttributes.tags as tag}
+			{#each post.attributes.tags as tag}
 				<div class="tag" on:click|stopPropagation={() => onTagClick(tag)}>
 					# {tag}
 				</div>

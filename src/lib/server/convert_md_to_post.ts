@@ -5,18 +5,18 @@ import rehypePrismPlus from "rehype-prism-plus";
 import rehypeRaw from "rehype-raw";
 import remarkRehype from "remark-rehype";
 import rehypeStringify from "rehype-stringify";
-import type { MDAttributes } from "src/models/md_attributes";
+import type { PostAttributes } from "src/models/post_attributes";
 import type { Post } from "src/models/post";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 
-export function convertMarkdown(path: string): Post {
+export function convertMarkdownToPost(path: string): Post {
 	const file = fs.readFileSync(path, "utf8");
 	const {
 		attributes,
 		body,
 	}: {
-		attributes: MDAttributes;
+		attributes: PostAttributes;
 		body: string;
 	} = fm(file);
 
@@ -31,7 +31,7 @@ export function convertMarkdown(path: string): Post {
 		.toString();
 
 	return {
-		mdAttributes: attributes,
+		attributes,
 		url: path.replace("static", "").replace(".md", ""),
 		html: result,
 	};

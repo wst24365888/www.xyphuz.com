@@ -9,10 +9,10 @@ export async function load({
 }): Promise<{ tag: string; posts: PostPreview[] }> {
 	let posts: PostPreview[] = await fetch("/api/posts").then((res) => res.json());
 
-	posts = posts.filter((post) => post.mdAttributes.tags.includes(params.tag));
+	posts = posts.filter((post) => post.attributes.tags.includes(params.tag));
 
 	posts = posts.sort((a, b) => {
-		return new Date(b.mdAttributes.date).getTime() - new Date(a.mdAttributes.date).getTime();
+		return new Date(b.attributes.date).getTime() - new Date(a.attributes.date).getTime();
 	});
 
 	return { tag: params.tag, posts };
