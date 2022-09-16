@@ -3,7 +3,6 @@
     import { Splide, SplideSlide } from '@splidejs/svelte-splide';
     import type { Options } from '@splidejs/splide';
     import '@splidejs/svelte-splide/css';
-	import { onMount } from 'svelte';
 
 	export let data: PageData;
 
@@ -21,13 +20,15 @@
 </script>
 
 <section>
-    <Splide options={splideOptions}>
-        {#each data.about.attributes.photoUrls as photoUrl}
-            <SplideSlide>
-                <img src={photoUrl} alt="{photoUrl}" style="height: 25em" />
-            </SplideSlide>
-        {/each}
-    </Splide>
+    {#if data.about.attributes.photoUrls != null}
+        <Splide options={splideOptions}>
+            {#each data.about.attributes.photoUrls as photoUrl}
+                <SplideSlide>
+                    <img src={photoUrl} alt="{photoUrl}" style="height: 25em" />
+                </SplideSlide>
+            {/each}
+        </Splide>
+    {/if}
 
     <div id="article-container">
         <article>

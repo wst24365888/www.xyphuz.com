@@ -21,13 +21,15 @@
 </script>
 
 <section>
-    <Splide options={splideOptions}>
-        {#each data.project.attributes.photoUrls as photoUrl}
-            <SplideSlide>
-                <img src={photoUrl} alt="{photoUrl}" style="height: 25em" />
-            </SplideSlide>
-        {/each}
-    </Splide>
+    {#if data.project.attributes.photoUrls != null}
+        <Splide options={splideOptions}>
+            {#each data.project.attributes.photoUrls as photoUrl}
+                <SplideSlide>
+                    <img src={photoUrl} alt="{photoUrl}" style="height: 25em" />
+                </SplideSlide>
+            {/each}
+        </Splide>
+    {/if}
 
     <div id="article-container">
         <article>
