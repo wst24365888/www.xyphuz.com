@@ -3,7 +3,9 @@
 	import '../app.css';
 </script>
 
-<Header />
+<div id="header">
+	<Header />
+</div>
 
 <main>
 	<slot />
@@ -13,6 +15,18 @@
 </footer>
 
 <style>
+	#header {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		z-index: 1;
+	}
+
+	main {
+		margin-top: 5em;
+	}
+
 	:global(body) {		
 		margin: 0;
 		padding: 0;

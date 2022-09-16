@@ -52,7 +52,7 @@
     }
 
     article {
-        padding: 4vw;
+        padding: 6vh 4vw 4vh 4vw;
     }
     
 	article :global(img) {
@@ -80,7 +80,7 @@
         }
 
         article :global(h1) {
-            font-size: 2em;
+            font-size: 2rem;
         }
     }
 </style>

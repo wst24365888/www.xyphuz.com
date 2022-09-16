@@ -20,7 +20,7 @@
     section {
         display: flex;
         justify-content: center;
-        padding: 4vw;
+        padding: 4vh 4vw;
     }
 
     h1 {
