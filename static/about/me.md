@@ -2,7 +2,7 @@
 title: Something About Me
 description: 吳星翰 HSING-HAN, WU a.k.a. Xyphuz
 dateString: 
-photoUrls: ["1.webp", "2.webp", "3.webp", "4.webp"]
+photoUrls: ["me/1.webp", "me/2.webp", "me/1.webp", "me/4.webp"]
 index: 0
 ---
 

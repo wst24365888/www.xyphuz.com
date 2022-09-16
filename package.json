@@ -33,6 +33,8 @@
 	"type": "module",
 	"dependencies": {
 		"@fontsource/fira-mono": "^4.5.9",
+		"@splidejs/splide": "^4.0.17",
+		"@splidejs/svelte-splide": "^0.2.7",
 		"front-matter": "^4.0.2",
 		"glob": "^8.0.3",
 		"rehype-prism-plus": "^1.5.0",
