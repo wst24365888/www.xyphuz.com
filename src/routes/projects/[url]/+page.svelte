@@ -5,28 +5,30 @@
 	import "@splidejs/svelte-splide/css";
 
 	export let data: PageData;
-
-	const splideOptions: Options = {
-		type: "loop",
-		width: "100%",
-		height: "25em",
-		autoWidth: true,
-		focus: "center",
-		autoplay: true,
-		interval: 3000,
-		speed: 1000,
-		lazyLoad: true,
-		pauseOnHover: false,
-		pauseOnFocus: false,
-	};
-
-	let splideOpacity = 0;
+    
+    let carouselWidth = "0px";
+	let carouselOpacity = 0;
 	setTimeout(() => {
-		splideOpacity = 1;
+		carouselOpacity = 1;
+        carouselWidth = "100%";
 	}, 100);
+
+    $: splideOptions = {
+        type: "loop",
+        width: carouselWidth,
+        height: "25em",
+        autoWidth: true,
+        focus: "center",
+        autoplay: true,
+        interval: 3000,
+        speed: 1000,
+        lazyLoad: true,
+        pauseOnHover: false,
+        pauseOnFocus: false,
+    } as Options;
 </script>
 
-<section style="--splide-opacity: {splideOpacity}">
+<section style="--carousel-opacity: {carouselOpacity}">
 	{#if data.project.attributes.photoUrls != null}
 		<Splide options={splideOptions}>
 			{#each data.project.attributes.photoUrls as photoUrl}
@@ -57,7 +59,7 @@
 
 	section :global(.splide) {
 		transition: opacity 0.4s ease-in-out;
-		opacity: var(--splide-opacity);
+		opacity: var(--carousel-opacity);
 	}
 
 	#article-container {
