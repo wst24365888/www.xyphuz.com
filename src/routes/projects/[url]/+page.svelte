@@ -79,6 +79,11 @@
 		margin-bottom: 1.25em;
 	}
 
+	#date {
+		margin-top: 0.25em;
+		color: #888;
+	}
+
 	hr {
 		margin-top: 1.2em;
 		margin-bottom: 3em;
