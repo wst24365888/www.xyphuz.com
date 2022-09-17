@@ -8,7 +8,7 @@ export async function load({
 	let projects: ProjectPreview[] = await fetch("/api/projects").then((res) => res.json());
 
 	projects = projects.sort((a, b) => {
-		return b.attributes.index - a.attributes.index;
+		return a.attributes.index - b.attributes.index;
 	});
 
 	return { projects };

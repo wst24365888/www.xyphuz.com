@@ -16,6 +16,8 @@
         interval: 3000,
         speed: 1000,
         lazyLoad: true,
+        pauseOnHover: false,
+        pauseOnFocus: false,
     };
 </script>
 
@@ -24,7 +26,7 @@
         <Splide options={splideOptions}>
             {#each data.about.attributes.photoUrls as photoUrl}
                 <SplideSlide>
-                    <img src={photoUrl} alt="{photoUrl}" style="height: 25em" />
+                    <img src={photoUrl} loading="lazy" alt="{photoUrl}" style="height: 25em" />
                 </SplideSlide>
             {/each}
         </Splide>
@@ -33,6 +35,7 @@
     <div id="article-container">
         <article>
             <h1 id="title">{data.about.attributes.title}</h1>
+            <div id="description">{data.about.attributes.description}</div>
             {#if data.about.attributes.dateString}
                 <div id="date">{data.about.attributes.dateString}</div>
             {/if}
@@ -66,6 +69,15 @@
         margin-top: 0.25em;
         margin-bottom: 1.25em;
 	}
+
+    #description {
+        color: #888;
+    }
+
+    #date {
+        margin-top: 0.25em;
+        color: #888;
+    }
 
     hr {
         margin-top: 1.2em;

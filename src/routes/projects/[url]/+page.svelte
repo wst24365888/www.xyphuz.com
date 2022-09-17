@@ -17,6 +17,8 @@
         interval: 3000,
         speed: 1000,
         lazyLoad: true,
+        pauseOnHover: false,
+        pauseOnFocus: false,
     };
 </script>
 
@@ -25,7 +27,7 @@
         <Splide options={splideOptions}>
             {#each data.project.attributes.photoUrls as photoUrl}
                 <SplideSlide>
-                    <img src={photoUrl} alt="{photoUrl}" style="height: 25em" />
+                    <img src={photoUrl} loading="lazy" alt="{photoUrl}" style="height: 25em" />
                 </SplideSlide>
             {/each}
         </Splide>
