@@ -5,6 +5,22 @@
 	--text-color: #444444;
 }
 
+::-webkit-scrollbar {
+	width: 0.5em;
+}
+
+::-webkit-scrollbar-track {
+	background: #eee; 
+}
+ 
+::-webkit-scrollbar-thumb {
+	background: #888; 
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: #444; 
+}
+
 a {
 	margin: 0;
 	font-weight: 200;
