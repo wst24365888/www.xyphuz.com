@@ -6,7 +6,7 @@
 </script>
 
 <svelte:head>
-	<title>Xyphuz - Tag: {data.tag}</title>
+	<title>Tag: {data.tag} - Xyphuz</title>
 </svelte:head>
 
 <section>
