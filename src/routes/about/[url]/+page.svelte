@@ -23,7 +23,7 @@
 	let splideOpacity = 0;
 	setTimeout(() => {
 		splideOpacity = 1;
-	}, 500);
+	}, 100);
 </script>
 
 <section style="--splide-opacity: {splideOpacity}">
@@ -59,7 +59,7 @@
 	}
 
 	section :global(.splide) {
-		transition: opacity 1s ease-in-out;
+		transition: opacity 0.4s ease-in-out;
 		opacity: var(--splide-opacity);
 	}
 
