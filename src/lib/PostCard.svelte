@@ -45,13 +45,7 @@
 		cursor: pointer;
 	}
 
-	.card-info {
-		display: flex;
-		justify-content: space-between;
-	}
-
 	.tags {
-		width: 60%;
 		display: inline-flex;
 		align-items: center;
 		flex-wrap: wrap;
@@ -68,12 +62,6 @@
 		background-color: #ccc;
 	}
 
-	.date-string {
-		width: 40%;
-		display: inline-flex;
-		justify-content: flex-end;
-	}
-
 	h2 {
 		margin-top: 0.75em 0;
 	}
@@ -81,5 +69,35 @@
 	p {
 		font-weight: 300;
 		color: #666;
+	}
+
+    @media (orientation: landscape) {
+		.card-info {
+			display: flex;
+			justify-content: space-between;
+		}
+
+		.tags {
+			width: 60%;
+		}
+
+		.date-string {
+			width: 40%;
+		}
+
+		.date-string {
+			display: inline-flex;
+			justify-content: flex-end;
+		}
+    }
+
+	@media (orientation: portrait) {
+		.tags {
+			width: 100%;
+		}
+
+		.date-string {
+			width: 100%;
+		}
 	}
 </style>

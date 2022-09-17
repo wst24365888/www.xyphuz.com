@@ -32,6 +32,7 @@
 	.card-info {
 		display: flex;
 		justify-content: space-between;
+		flex-wrap: wrap;
 	}
 
 	h2 {
