@@ -5,6 +5,10 @@
     export let data: PageData;
 </script>
 
+<svelte:head>
+	<title>Xyphuz - Tag: {data.tag}</title>
+</svelte:head>
+
 <section>
     <div id="container">
         <h1># {data.tag}</h1>

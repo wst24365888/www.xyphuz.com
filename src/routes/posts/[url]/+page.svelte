@@ -9,6 +9,10 @@
 	});
 </script>
 
+<svelte:head>
+	<title>Post - {data.post.attributes.title}</title>
+</svelte:head>
+
 <section>
     <article>
         <h1 id="title">{data.post.attributes.title}</h1>

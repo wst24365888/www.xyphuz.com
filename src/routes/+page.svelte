@@ -2,7 +2,7 @@
 </script>
 
 <svelte:head>
-	<title>Xyphuz - Official Website</title>
+	<title>Official Website - Xyphuz</title>
 	<meta name="description" content="This is the official website of Xyphuz." />
 </svelte:head>
 

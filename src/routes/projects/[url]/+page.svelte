@@ -28,6 +28,10 @@
     } as Options;
 </script>
 
+<svelte:head>
+	<title>Project - {data.project.attributes.title}</title>
+</svelte:head>
+
 <section style="--carousel-opacity: {carouselOpacity}">
 	{#if data.project.attributes.photoUrls != null}
 		<Splide options={splideOptions}>

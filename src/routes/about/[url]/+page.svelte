@@ -28,6 +28,10 @@
     } as Options;
 </script>
 
+<svelte:head>
+	<title>About - {data.about.attributes.title}</title>
+</svelte:head>
+
 <section style="--carousel-opacity: {carouselOpacity}">
 	{#if data.about.attributes.photoUrls != null}
 		<Splide options={splideOptions}>
