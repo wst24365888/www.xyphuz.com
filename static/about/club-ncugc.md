@@ -2,12 +2,13 @@
 title: Club - NCUGC
 description: NCUGC | Minister of Event Planning Department & Game Manager
 dateString: 2018 - 2022
-photoUrls: [
-    "club-ncugc/gc_marked.webp", 
+photoUrls:
+  [
+    "club-ncugc/gc_marked.webp",
     "club-ncugc/gc_plan_marked.webp",
     "club-ncugc/gc_sitcon_marked.webp",
     "club-ncugc/gc_talk_marked.webp",
-]
+  ]
 index: 3
 ---
 

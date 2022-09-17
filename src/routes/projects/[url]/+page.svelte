@@ -3,7 +3,6 @@
     import { Splide, SplideSlide } from '@splidejs/svelte-splide';
     import type { Options } from '@splidejs/splide';
     import '@splidejs/svelte-splide/css';
-	import { onMount } from 'svelte';
 
 	export let data: PageData;
 

@@ -2,7 +2,8 @@
 title: Aquaculture Equipment Control System
 description: An user interface to control aquaculture system.
 dateString: 2020 - 2021
-photoUrls: ["aquaculture-equipment-control-system/1.webp", "aquaculture-equipment-control-system/2.webp"]
+photoUrls:
+  ["aquaculture-equipment-control-system/1.webp", "aquaculture-equipment-control-system/2.webp"]
 index: 0
 ---
 

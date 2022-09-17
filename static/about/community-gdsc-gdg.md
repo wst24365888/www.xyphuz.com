@@ -2,13 +2,14 @@
 title: Community - GDSC
 description: GDSC NCU | Core Team Member
 dateString: 2020 - 2022
-photoUrls: [
-    "community-gdsc-gdg/dsc.webp", 
+photoUrls:
+  [
+    "community-gdsc-gdg/dsc.webp",
     "community-gdsc-gdg/dsc_ncu_1_marked.webp",
     "community-gdsc-gdg/dsc_ncu_2_marked.webp",
     "community-gdsc-gdg/dsc_ncu_3_marked.webp",
     "community-gdsc-gdg/gdg_marked.webp",
-]
+  ]
 index: 2
 ---
 

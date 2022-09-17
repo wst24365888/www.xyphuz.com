@@ -2,8 +2,9 @@
 title: Job at ISLUNCH
 description: ISLUNCH @ SV | Sofware Developer & Tech Lead
 dateString: 2021 - 2022
-photoUrls: [
-    "job-at-islunch/logo.webp", 
+photoUrls:
+  [
+    "job-at-islunch/logo.webp",
     "job-at-islunch/Screenshot_1633540793.webp",
     "job-at-islunch/Screenshot_1633540826.webp",
     "job-at-islunch/Screenshot_1633540836.webp",
@@ -17,7 +18,7 @@ photoUrls: [
     "job-at-islunch/Screenshot_1633541467.webp",
     "job-at-islunch/Screenshot_1633541473.webp",
     "job-at-islunch/Screenshot_1633541561.webp",
-]
+  ]
 index: 1
 ---
 
