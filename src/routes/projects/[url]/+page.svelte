@@ -25,7 +25,22 @@
         lazyLoad: true,
         pauseOnHover: false,
         pauseOnFocus: false,
-    } as Options;
+	} as Options;
+
+	$: computedPhotoUrls = (() => {
+		if (data.project.attributes.photoUrls == null) {
+			return null;
+		}
+
+		let photoUrls = data.project.attributes.photoUrls;
+		
+		const perPage = 8;
+		while (photoUrls.length < perPage) {
+			photoUrls = photoUrls.concat(photoUrls);
+		}
+
+		return photoUrls;
+	})();
 </script>
 
 <svelte:head>
@@ -33,9 +48,9 @@
 </svelte:head>
 
 <section style="--carousel-opacity: {carouselOpacity}">
-	{#if data.project.attributes.photoUrls != null}
+	{#if computedPhotoUrls != null}
 		<Splide options={splideOptions}>
-			{#each data.project.attributes.photoUrls as photoUrl}
+			{#each computedPhotoUrls as photoUrl}
 				<SplideSlide>
 					<img src={photoUrl} loading="lazy" alt={photoUrl} style="height: 25em" />
 				</SplideSlide>
