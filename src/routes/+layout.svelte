@@ -26,12 +26,4 @@
 	main {
 		margin-top: 5em;
 	}
-
-	:global(body) {		
-		margin: 0;
-		padding: 0;
-		font-family: "Montserrat", sans-serif;
-		line-height: 1.75;
-		overflow-y: overlay;
-	}
 </style>
