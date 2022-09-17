@@ -54,10 +54,11 @@
 		width: 60%;
 		display: inline-flex;
 		align-items: center;
+		flex-wrap: wrap;
 	}
 
 	.tag {
-		margin-right: 1em;
+		margin: 0.25em 0.5em 0.25em 0;
 		background-color: #eee;
 		padding: 0.25em 0.5em;
     	transition: 0.5s;

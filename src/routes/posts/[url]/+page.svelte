@@ -22,7 +22,7 @@
     section {
         display: flex;
         justify-content: center;
-        padding: 2em 4vw;
+        padding: 2em 2.5em;
     }
     
 	article :global(img) {

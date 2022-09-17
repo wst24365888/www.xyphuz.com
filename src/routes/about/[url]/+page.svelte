@@ -55,7 +55,7 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        padding: 4em 4vw 2em 4vw;
+        padding: 4em 2.5em 2em 2.5em;
     }
     
 	article :global(img) {
