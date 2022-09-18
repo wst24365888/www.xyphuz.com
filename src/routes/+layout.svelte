@@ -26,4 +26,22 @@
 	main {
 		margin-top: 5em;
 	}
+
+	@media only screen {
+		:global(body::-webkit-scrollbar) {
+			width: 0.5em;
+		}
+
+		:global(body::-webkit-scrollbar-track) {
+			background: #eee;
+		}
+
+		:global(body::-webkit-scrollbar-thumb) {
+			background: #888;
+		}
+
+		:global(body::-webkit-scrollbar-thumb:hover) {
+			background: #444;
+		}
+	}
 </style>
