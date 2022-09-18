@@ -16,6 +16,7 @@
 		"@sveltejs/kit": "next",
 		"@types/cookie": "^0.5.1",
 		"@types/glob": "^8.0.0",
+		"@types/three": "^0.144.0",
 		"@typescript-eslint/eslint-plugin": "^5.37.0",
 		"@typescript-eslint/parser": "^5.37.0",
 		"eslint": "^8.23.1",
@@ -28,13 +29,15 @@
 		"svelte-preprocess": "^4.10.7",
 		"tslib": "^2.4.0",
 		"typescript": "^4.8.3",
-		"vite": "^3.1.1"
+		"vite": "^3.1.2"
 	},
 	"type": "module",
 	"dependencies": {
 		"@fontsource/fira-mono": "^4.5.9",
 		"@splidejs/splide": "^4.0.17",
 		"@splidejs/svelte-splide": "^0.2.7",
+		"@threlte/core": "^4.3.2",
+		"@threlte/extras": "^4.3.0",
 		"front-matter": "^4.0.2",
 		"glob": "^8.0.3",
 		"rehype-prism-plus": "^1.5.0",
@@ -44,6 +47,7 @@
 		"remark-parse": "^10.0.1",
 		"remark-rehype": "^10.1.0",
 		"svelte-fast-marquee": "^0.4.1",
+		"three": "^0.144.0",
 		"unified": "^10.1.2"
 	}
 }

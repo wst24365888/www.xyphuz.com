@@ -1,0 +1,35 @@
+<script lang="ts">
+	import {
+		AmbientLight,
+		DirectionalLight,
+		Group,
+		OrthographicCamera,
+		useFrame,
+	} from "@threlte/core";
+	import { GLTF } from "@threlte/extras";
+
+	export let zoom: number;
+	let rotation = 0;
+
+	useFrame(() => {
+		rotation += 0.002;
+	});
+</script>
+
+<Group rotation={{ y: rotation }}>
+	<OrthographicCamera position={{ z: 100, y: 0 }} lookAt={{ y: 0 }} zoom={zoom} />
+</Group>
+
+<GLTF 
+	castShadow 
+	receiveShadow 
+	url={"/logo_3d/logo_3d.gltf"} 
+	interactive 
+	rotation={{ x: Math.PI / 2 }}
+/>
+
+<DirectionalLight shadow position={{ x: 0, y: 10, z: 10 }} intensity={2} />
+<DirectionalLight shadow position={{ x: 10, y: 10, z: 0 }} intensity={2} />
+<DirectionalLight shadow position={{ x: 0, y: 10, z: -10 }} intensity={2} />
+<DirectionalLight shadow position={{ x: -10, y: 10, z: 0 }} intensity={2} />
+<AmbientLight intensity={0.5} />
