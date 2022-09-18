@@ -25,6 +25,7 @@
 
 	main {
 		margin-top: 5em;
+		height: calc(100vh - 5em);
 	}
 
 	@media only screen {

@@ -10,7 +10,7 @@
 		</a>
 	</div>
 
-	<nav>
+	<nav data-sveltekit-prefetch>
 		<ul>
 			<li class:active={$page.url.pathname === '/'}>
 				<a href="/">Home</a>
