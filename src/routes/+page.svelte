@@ -15,6 +15,8 @@
 </svelte:head>
 
 <section bind:clientWidth={w} bind:clientHeight={h}>
+	<div id="backgruond" />
+
 	<div id="background-text-container">
 		<p id="background-text">
 			<Marquee speed={10}>
@@ -52,7 +54,29 @@
 		height: 100%;
 	}
 
+	#backgruond {
+		position: absolute;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		margin: 0;
+		padding: 0;
+		width: 100%;
+		height: 100%;
+		z-index: -3;
+		background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAABnSURBVHja7M5RDYAwDEXRDgmvEocnlrQS2SwUFST9uEfBGWs9c97nbGtDcquqiKhOImLs/UpuzVzWEi1atGjRokWLFi1atGjRokWLFi1atGjRokWLFi1af7Ukz8xWp8z8AAAA//8DAJ4LoEAAlL1nAAAAAElFTkSuQmCC)
+			repeat 0 0;
+		animation: backgruond-scrolling 5s linear infinite;
+	}
+
+	@keyframes backgruond-scrolling {
+		100% {
+			background-position: 50px 50px;
+		}
+	}
+
 	#background-text-container {
+		position: absolute;
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -103,15 +127,17 @@
 		align-items: flex-start;
 		margin: 0;
 		height: calc(100% - 5em);
+		height: 100%;
 	}
 
 	.wrapper {
 		position: relative;
+		width: 100%;
 	}
 
 	@media (orientation: landscape) {
 		#info-container {
-			padding: 2em 4em;
+			padding: 4em;
 			justify-content: flex-end;
 		}
 
@@ -156,8 +182,10 @@
 
 	@media (orientation: portrait) {
 		#info-container {
-			padding: 2em 2em;
+			padding: 2em;
 			justify-content: space-between;
+			width: 100%;
+			box-sizing: border-box;
 		}
 
 		#name {
@@ -187,6 +215,7 @@
 			padding: 0;
 			line-height: 1.25;
 			-webkit-text-stroke: 2px #222;
+			width: 100%;
 			text-align: right;
 		}
 
@@ -197,6 +226,8 @@
 			top: 0px;
 			left: 0px;
 			-webkit-text-stroke: 0px #222;
+			width: 100%;
+			text-align: right;
 		}
 	}
 </style>
