@@ -53,6 +53,7 @@
 		padding: 0;
 		width: 100%;
 		height: 100%;
+		position: relative;
 	}
 
 	#backgruond {
@@ -126,7 +127,6 @@
 		flex-direction: column;
 		align-items: flex-start;
 		margin: 0;
-		height: calc(100% - 5em);
 		height: 100%;
 	}
 

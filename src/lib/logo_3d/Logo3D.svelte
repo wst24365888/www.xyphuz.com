@@ -35,6 +35,7 @@
 	url={"/logo_3d/logo_3d.gltf"} 
 	interactive 
 	rotation={{ x: Math.PI / 2 }}
+	useDraco
 />
 
 <DirectionalLight shadow position={{ x: 0, y: 10, z: 10 }} intensity={2} />
