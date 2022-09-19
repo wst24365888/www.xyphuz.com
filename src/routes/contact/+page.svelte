@@ -9,7 +9,6 @@
 
     $: landscape = w > h;
 	$: zoom = landscape ? w / 15 : w / 6;
-	$: speed = w / 192;
 </script>
 
 <svelte:head>
@@ -22,7 +21,7 @@
 
 	<div id="backgruond-marquee-container">
 		<div id="backgruond-marquee">
-			<Marquee {speed}>
+			<Marquee speed={10}>
 				Contact Xyphuz
 				<div id="divider" />
 			</Marquee>
