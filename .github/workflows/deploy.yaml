@@ -32,7 +32,7 @@ jobs:
           cache-to: >-
             type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/www.xyphuz.com:buildcache,mode=max
   
-  deploy-tp-vps:
+  deploy-to-vps:
     needs: release-docker
     runs-on: ubuntu-latest
     steps:
