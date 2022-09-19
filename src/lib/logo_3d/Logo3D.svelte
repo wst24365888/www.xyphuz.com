@@ -11,7 +11,16 @@
 	export let zoom: number;
 	let rotation = 0;
 
+	let started = false;
+	setTimeout(() => {
+		started = true;
+	}, 3000);
+
 	useFrame(() => {
+		if (!started) {
+			return;
+		}
+
 		rotation += 0.002;
 	});
 </script>

@@ -18,13 +18,13 @@
 <section bind:clientWidth={w} bind:clientHeight={h}>
 	<div id="backgruond" />
 
-	<div id="background-text-container">
-		<p id="background-text">
-			<Marquee speed={speed}>
+	<div id="backgruond-marquee-container">
+		<div id="backgruond-marquee">
+			<Marquee {speed}>
 				Official Website - Xyphuz
 				<div id="divider" />
 			</Marquee>
-		</p>
+		</div>
 	</div>
 
 	<div id="canvas">
@@ -67,16 +67,11 @@
 		z-index: -3;
 		background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAABnSURBVHja7M5RDYAwDEXRDgmvEocnlrQS2SwUFST9uEfBGWs9c97nbGtDcquqiKhOImLs/UpuzVzWEi1atGjRokWLFi1atGjRokWLFi1atGjRokWLFi1af7Ukz8xWp8z8AAAA//8DAJ4LoEAAlL1nAAAAAElFTkSuQmCC)
 			repeat 0 0;
-		animation: backgruond-scrolling 5s linear infinite;
+		opacity: 0;
+		animation: backgruond-scrolling 5s linear infinite, fade-in 1s ease-in-out 0.5s forwards;
 	}
 
-	@keyframes backgruond-scrolling {
-		100% {
-			background-position: 50px 50px;
-		}
-	}
-
-	#background-text-container {
+	#backgruond-marquee-container {
 		position: absolute;
 		display: flex;
 		justify-content: center;
@@ -88,7 +83,7 @@
 		z-index: -2;
 	}
 
-	#background-text {
+	#backgruond-marquee {
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -101,6 +96,8 @@
 		margin: 0;
 		padding: 0;
 		height: 100%;
+		opacity: 0;
+		animation: fade-in 2s ease-in-out 1s forwards;
 	}
 
 	#divider {
@@ -117,6 +114,8 @@
 		width: 100vw;
 		height: calc(100% - 5em);
 		z-index: -1;
+		opacity: 0;
+		animation: fade-in 1s ease-in-out 2s forwards;
 	}
 
 	#info-container {
@@ -134,6 +133,21 @@
 	.wrapper {
 		position: relative;
 		width: 100%;
+	}
+
+	@keyframes backgruond-scrolling {
+		100% {
+			background-position: 50px 50px;
+		}
+	}
+
+	@keyframes fade-in {
+		0% {
+			opacity: 0;
+		}
+		100% {
+			opacity: 1;
+		}
 	}
 
 	@media (orientation: landscape) {
