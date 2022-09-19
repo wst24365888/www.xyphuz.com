@@ -45,6 +45,6 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           port: ${{ secrets.HOST_PORT }}
           script: |
-            docker stop www.xyphuz.com
+            docker stop www.xyphuz.com && docker rm www.xyphuz.com
             docker pull wst24365888/www.xyphuz.com:latest
             docker run --name www.xyphuz.com -p ${{ secrets.HOST_PORT }}:3000 -d wst24365888/www.xyphuz.com:latest
