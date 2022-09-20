@@ -81,7 +81,6 @@
 		width: 100%;
 		height: calc(100% - 5em);
 		z-index: -2;
-        margin-bottom: 2em;
 	}
 
 	#backgruond-marquee {
@@ -151,6 +150,10 @@
 	}
 
 	@media (orientation: landscape) {
+		#backgruond-marquee-container {
+			margin-bottom: 20em;
+		}
+		
 		#canvas {
 			left: 50vw;
 			width: 50vw;
