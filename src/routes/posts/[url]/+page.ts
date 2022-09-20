@@ -1,5 +1,7 @@
 import type { Post } from "src/models/post";
 
+export const prerender = true;
+
 export async function load({
 	params,
 	fetch,

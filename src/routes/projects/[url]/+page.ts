@@ -1,5 +1,7 @@
 import type { Project } from "src/models/project";
 
+export const prerender = true;
+
 export async function load({
 	params,
 	fetch,

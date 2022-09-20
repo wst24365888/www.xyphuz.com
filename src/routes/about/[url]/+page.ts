@@ -1,5 +1,7 @@
 import type { About } from "src/models/about";
 
+export const prerender = true;
+
 export async function load({
 	params,
 	fetch,

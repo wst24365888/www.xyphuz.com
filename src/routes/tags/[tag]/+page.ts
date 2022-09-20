@@ -1,5 +1,7 @@
 import type { PostPreview } from "src/models/post_preview";
 
+export const prerender = true;
+
 export async function load({
 	params,
 	fetch,
