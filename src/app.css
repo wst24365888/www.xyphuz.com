@@ -1,6 +1,5 @@
 :root {
-	--accent-color: #ff3e00;
-	--text-color: #444444;
+	--accent-color: #aaaaee;
 }
 
 * {
@@ -25,7 +24,7 @@ ul {
 a:not(article > h1 > a, article > h2 > a, article > h3 > a, article > h4 > a, article > h5 > a, article > h6 > a) {
 	margin: 0;
 	font-weight: 200;
-	color: black;
+	color: var(--accent-color);
 	text-decoration: none;
 }
 
