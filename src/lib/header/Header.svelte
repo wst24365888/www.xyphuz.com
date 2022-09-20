@@ -9,6 +9,11 @@
 	onMount(() => {
 		mounted = true;
 	});
+
+	let expandMenu = false;
+	function toggleMenu() {
+		expandMenu = !expandMenu;
+	}
 </script>
 
 <header>
@@ -42,7 +47,7 @@
 
 	<div class="corner">
 		{#if mounted && !landscape}
-			<div id="menu">
+			<div id="menu-icon" on:click={toggleMenu}>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					x="0px"
@@ -56,11 +61,39 @@
 					/></svg
 				>
 			</div>
+			{#if expandMenu}
+				<div id="menu">
+					<a href="/" on:click={toggleMenu}>Home</a>
+					<a href="/about" on:click={toggleMenu}>About</a>
+					<a href="/projects" on:click={toggleMenu}>Projects</a>
+					<a href="/blog" on:click={toggleMenu}>Blog</a>
+					<a href="/contact" on:click={toggleMenu}>Contact</a>
+				</div>
+			{/if}
 		{/if}
 	</div>
 </header>
 
 <style>
+	#menu {
+		position: absolute;
+		left: 0;
+		top: 5em;
+		width: 100vw;
+		padding: 2em;
+		z-index: 10;
+		background-color: white;
+	}
+
+	#menu > a {
+		display: block;
+		padding: 1em;
+		font-weight: 700;
+		color: rgba(0, 0, 0, 0.7);
+		opacity: 0;
+		animation: fade-in 0.25s ease-in-out 0.25s forwards;
+	}
+
 	header {
 		display: flex;
 		justify-content: space-between;
@@ -72,8 +105,8 @@
 		height: 5em;
 	}
 
-	.corner a,
-	#menu {
+	.corner > a,
+	#menu-icon {
 		display: flex;
 		align-items: center;
 		justify-content: center;
