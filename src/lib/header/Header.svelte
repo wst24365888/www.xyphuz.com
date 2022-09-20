@@ -62,12 +62,14 @@
 				>
 			</div>
 			{#if expandMenu}
-				<div id="menu">
-					<a href="/" on:click={toggleMenu}>Home</a>
-					<a href="/about" on:click={toggleMenu}>About</a>
-					<a href="/projects" on:click={toggleMenu}>Projects</a>
-					<a href="/blog" on:click={toggleMenu}>Blog</a>
-					<a href="/contact" on:click={toggleMenu}>Contact</a>
+				<div id="menu-container">
+					<div id="menu">
+						<a href="/" on:click={toggleMenu}>Home</a>
+						<a href="/about" on:click={toggleMenu}>About</a>
+						<a href="/projects" on:click={toggleMenu}>Projects</a>
+						<a href="/blog" on:click={toggleMenu}>Blog</a>
+						<a href="/contact" on:click={toggleMenu}>Contact</a>
+					</div>
 				</div>
 			{/if}
 		{/if}
@@ -75,10 +77,20 @@
 </header>
 
 <style>
-	#menu {
+	#menu-container {
 		position: absolute;
 		left: 0;
 		top: 5em;
+		height: calc(100vh - 5em);
+		width: 100vw;
+		padding: 2em;
+		background-color: rgba(0, 0, 0, 0.5);
+	}
+
+	#menu {
+		position: absolute;
+		left: 0;
+		top: 0;
 		width: 100vw;
 		padding: 2em;
 		z-index: 10;
