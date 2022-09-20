@@ -1,6 +1,6 @@
 import type { Project } from "src/models/project";
 
-export const prerender = true;
+export const prerender = "auto";
 
 export async function load({
 	params,
