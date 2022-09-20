@@ -7,6 +7,7 @@
 	let h: number;
 
 	$: zoom = Math.min(w, h) / 5;
+	$: speed = w / 384 + 5;
 </script>
 
 <svelte:head>
@@ -20,7 +21,7 @@
 
 	<div id="backgruond-marquee-container">
 		<div id="backgruond-marquee">
-			<Marquee speed={10}>
+			<Marquee {speed}>
 				Official Website - Xyphuz
 				<div id="divider" />
 			</Marquee>
