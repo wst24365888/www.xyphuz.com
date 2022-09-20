@@ -4,6 +4,9 @@ WORKDIR /app
 
 COPY . .
 
+ENV NODE_OPTIONS=--experimental-specifier-resolution=node
+RUN echo ${NODE_OPTIONS}
+
 RUN apk add --no-cache libc6-compat
 RUN npm install -g pnpm
 RUN pnpm install --frozen-lockfile
@@ -20,4 +23,4 @@ COPY --from=builder /app/node_modules ./node_modules
 
 EXPOSE 3000
 
-CMD ["node", "--experimental-specifier-resolution=node", "build"]
+CMD ["node", "build"]
