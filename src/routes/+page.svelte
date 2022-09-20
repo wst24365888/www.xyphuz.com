@@ -112,7 +112,8 @@
 		align-items: center;
 		margin: 0;
 		padding: 0;
-		width: 100vw;
+		left: 50vw;
+		width: 50vw;
 		height: calc(100% - 5em);
 		z-index: -1;
 		opacity: 0;
@@ -158,7 +159,7 @@
 		}
 
 		#name {
-			font-size: 6em;
+			font-size: 10em;
 			font-weight: 900;
 			color: #222;
 			margin: 0;
@@ -177,7 +178,7 @@
 		}
 
 		#description {
-			font-size: 6em;
+			font-size: 10em;
 			font-weight: 900;
 			color: white;
 			margin: 0;
