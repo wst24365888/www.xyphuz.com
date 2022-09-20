@@ -14,8 +14,6 @@
 
 <svelte:head>
 	<title>Contact - Xyphuz</title>
-	<link rel="preload" href="/logo_3d/gmail_3d.gltf" />
-	<link rel="preload" href="/logo_3d/github_3d.gltf" />
 </svelte:head>
 
 <section bind:clientWidth={w} bind:clientHeight={h}>
