@@ -1,13 +1,18 @@
 <script lang="ts">
 	import Header from '$lib/header/Header.svelte';
 	import '../app.css';
+
+	let w: number;
+	let h: number;
+
+	$: landscape = w > h;
 </script>
 
 <div id="header">
-	<Header />
+	<Header {landscape} />
 </div>
 
-<main>
+<main bind:clientWidth={w} bind:clientHeight={h}>
 	<slot />
 </main>
 

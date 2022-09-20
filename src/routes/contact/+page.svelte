@@ -85,11 +85,11 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		margin: 0 0 5em 0;
 		padding: 0;
 		width: 100%;
-		height: 100%;
+		height: calc(100% - 5em);
 		z-index: -2;
+        margin-bottom: 2em;
 	}
 
 	#backgruond-marquee {
@@ -146,15 +146,16 @@
 	}
 
 	#info-container {
-		position: absolute;
+		position: relative;
 		left: 0;
 		top: 0;
 		display: flex;
 		flex-direction: column;
 		align-items: flex-start;
 		margin: 0;
+		width: 100%;
 		height: 100%;
-		z-index: -1;
+        z-index: -1;
 	}
 
 	.wrapper {
