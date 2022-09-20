@@ -18,7 +18,7 @@
 
 	let smoothDelta = 0;
 	useFrame((_, delta) => {
-		if (!started) {
+		if (!started || 1/delta < 1) {
 			return;
 		}
 
