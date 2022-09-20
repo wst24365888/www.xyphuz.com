@@ -10,6 +10,12 @@
 	$: speed = w / 384 + 5;
 
 	let logoOpacity = 0;
+
+	function gltfLoadedCallback() {
+		setTimeout(() => {
+			logoOpacity = 1;
+		}, 2000);
+	}
 </script>
 
 <svelte:head>
@@ -31,7 +37,7 @@
 
 	<div id="canvas">
 		<Canvas>
-			<Logo3D {zoom} gltfLoadedCallback={() => logoOpacity = 1} />
+			<Logo3D {zoom} {gltfLoadedCallback} />
 		</Canvas>
 	</div>
 
@@ -115,7 +121,7 @@
 		height: calc(100% - 5em);
 		z-index: -1;
 		opacity: var(--logo-opacity);
-		transition: opacity 1s ease-in-out 2s;
+		transition: opacity 1s ease-in-out;
 	}
 
 	#info-container {
