@@ -96,7 +96,6 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		font-size: 16em;
 		height: 100%;
 		font-weight: 900;
 		color: #eee;
@@ -179,13 +178,17 @@
 	}
 
 	@media (orientation: landscape) {
+		#backgruond-marquee {
+			font-size: 14vw;
+		}
+
 		#info-container {
 			padding: 4em;
 			justify-content: flex-end;
 		}
 
 		#name {
-			font-size: 6em;
+			font-size: 5vw;
 			font-weight: 900;
 			color: #222;
 			margin: 0;
@@ -204,7 +207,7 @@
 		}
 
 		#description {
-			font-size: 6em;
+			font-size: 5vw;
 			font-weight: 900;
 			color: white;
 			margin: 0;
@@ -232,6 +235,10 @@
 	}
 
 	@media (orientation: portrait) {
+		#backgruond-marquee {
+			font-size: 12em;
+		}
+
 		#info-container {
 			padding: 2em;
 			justify-content: space-between;

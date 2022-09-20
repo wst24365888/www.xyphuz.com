@@ -87,7 +87,6 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		font-size: 16em;
 		height: 100%;
 		font-weight: 900;
 		color: #eee;
@@ -150,8 +149,12 @@
 	}
 
 	@media (orientation: landscape) {
+		#backgruond-marquee {
+			font-size: 13vw;
+		}
+
 		#backgruond-marquee-container {
-			margin-bottom: 20em;
+			margin-bottom: 34vh;
 		}
 		
 		#canvas {
@@ -160,12 +163,12 @@
 		}
 
 		#info-container {
-			padding: 4em;
+			padding: 3vh 3vw;
 			justify-content: flex-end;
 		}
 
 		#name {
-			font-size: 10em;
+			font-size: 8.5vw;
 			font-weight: 900;
 			color: #222;
 			margin: 0;
@@ -184,7 +187,7 @@
 		}
 
 		#description {
-			font-size: 10em;
+			font-size: 8.5vw;
 			font-weight: 900;
 			color: white;
 			margin: 0;
@@ -204,6 +207,10 @@
 	}
 
 	@media (orientation: portrait) {
+		#backgruond-marquee {
+			font-size: 12em;
+		}
+
 		#canvas {
 			width: 100vw;
 		}
