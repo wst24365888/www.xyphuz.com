@@ -6,12 +6,18 @@
 
 	export let data: PageData;
 
+	let showCarouesel = false;	
+	setTimeout(() => {
+		showCarouesel = true;
+		console.log("showCarouesel = true");
+	}, 800);
+
     let carouselWidth = "0px";
 	let carouselOpacity = 0;
 	setTimeout(() => {
 		carouselOpacity = 1;
         carouselWidth = "100%";
-	}, 100);
+	}, 1200);
 
     $: splideOptions = {
         type: "loop",
@@ -38,7 +44,7 @@
 </svelte:head>
 
 <section style="--carousel-opacity: {carouselOpacity}">
-	{#if data.about.attributes.photoUrls != null}
+	{#if showCarouesel && data.about.attributes.photoUrls != null}
 		<Splide options={splideOptions}>
 			{#each data.about.attributes.photoUrls as photoUrl}
 				<SplideSlide>
@@ -46,6 +52,8 @@
 				</SplideSlide>
 			{/each}
 		</Splide>
+	{:else}
+		<div style="height: 25em"></div>
 	{/if}
 
 	<div id="article-container">
@@ -70,7 +78,7 @@
 	}
 
 	section :global(.splide) {
-		transition: opacity 0.4s ease-in-out;
+		transition: opacity 1s ease-in-out;
 		opacity: var(--carousel-opacity);
 	}
 
