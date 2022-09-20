@@ -16,12 +16,15 @@
 		started = true;
 	}, 3000);
 
-	useFrame(() => {
+	let smoothDelta = 0;
+	useFrame((_, delta) => {
 		if (!started) {
 			return;
 		}
 
-		rotation += 0.002;
+		smoothDelta = smoothDelta * 0.9 + delta * 0.1;
+
+		rotation += 0.002 * (144 / (1/smoothDelta));
 	});
 
 	const { onPointerEnter, onPointerLeave } = useCursor();
@@ -48,18 +51,18 @@
 			clearTimeout(timeout);
 			timeout = setTimeout(later, wait);
 		};
-	};
+	}
 </script>
 
 <Group rotation={{ y: rotation }}>
-	<OrthographicCamera position={{ z: 100, y: 0 }} lookAt={{ y: 0 }} zoom={zoom} />
+	<OrthographicCamera position={{ z: 100, y: 0 }} lookAt={{ y: 0 }} {zoom} />
 </Group>
 
-<GLTF 
-	castShadow 
-	receiveShadow 
-	url={"/logo_3d/github_3d.gltf"} 
-	interactive 
+<GLTF
+	castShadow
+	receiveShadow
+	url={"/logo_3d/github_3d.gltf"}
+	interactive
 	on:pointerenter={debounce(onPointerEnterHandler, 100)}
 	on:pointerleave={debounce(onPointerLeaveHandler, 100)}
 	on:click={() => window.open("https://github.com/wst24365888", "_blank")}

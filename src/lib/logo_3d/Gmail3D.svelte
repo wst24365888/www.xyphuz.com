@@ -16,12 +16,15 @@
 		started = true;
 	}, 3000);
 
-	useFrame(() => {
+	let smoothDelta = 0;
+	useFrame((_, delta) => {
 		if (!started) {
 			return;
 		}
 
-		rotation += 0.002;
+		smoothDelta = smoothDelta * 0.9 + delta * 0.1;
+
+		rotation += 0.002 * (144 / (1/smoothDelta));
 	});
 
 	const { onPointerEnter, onPointerLeave } = useCursor();
