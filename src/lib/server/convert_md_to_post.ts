@@ -29,7 +29,9 @@ export function convertMarkdownToPost(path: string): Post {
 		.use(rehypePrismPlus)
 		.use(rehypeRaw)
 		.use(rehypeSlug)
-		.use(rehypeAutolinkHeadings)
+		.use(rehypeAutolinkHeadings, {
+			behavior: "wrap",
+		})
 		.use(rehypeStringify)
 		.processSync(body)
 		.toString();
