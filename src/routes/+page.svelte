@@ -8,6 +8,8 @@
 
 	$: zoom = Math.min(w, h) / 5;
 	$: speed = w / 384 + 5;
+
+	let logoOpacity = 0;
 </script>
 
 <svelte:head>
@@ -15,7 +17,7 @@
 	<meta name="description" content="This is the official website of Xyphuz." />
 </svelte:head>
 
-<section bind:clientWidth={w} bind:clientHeight={h}>
+<section bind:clientWidth={w} bind:clientHeight={h} style="--logo-opacity: {logoOpacity}">
 	<div id="backgruond" />
 
 	<div id="backgruond-marquee-container">
@@ -29,7 +31,7 @@
 
 	<div id="canvas">
 		<Canvas>
-			<Logo3D {zoom} />
+			<Logo3D {zoom} gltfLoadedCallback={() => logoOpacity = 1} />
 		</Canvas>
 	</div>
 
@@ -112,8 +114,8 @@
 		padding: 0;
 		height: calc(100% - 5em);
 		z-index: -1;
-		opacity: 0;
-		animation: fade-in 1s ease-in-out 2s forwards;
+		opacity: var(--logo-opacity);
+		transition: opacity 1s ease-in-out 2s;
 	}
 
 	#info-container {
