@@ -9,6 +9,8 @@ import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import type { Project } from "src/models/project";
 import type { ProjectAttributes } from "src/models/project_attributes";
+import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import rehypeSlug from "rehype-slug";
 
 export function convertMarkdownToProject(path: string): Project {
 	const file = fs.readFileSync(path, "utf8");
@@ -26,6 +28,8 @@ export function convertMarkdownToProject(path: string): Project {
 		.use(remarkRehype)
 		.use(rehypePrismPlus)
 		.use(rehypeRaw)
+		.use(rehypeSlug)
+		.use(rehypeAutolinkHeadings)
 		.use(rehypeStringify)
 		.processSync(body)
 		.toString();

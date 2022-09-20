@@ -9,6 +9,8 @@ import type { PostAttributes } from "src/models/post_attributes";
 import type { Post } from "src/models/post";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
+import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import rehypeSlug from "rehype-slug";
 
 export function convertMarkdownToPost(path: string): Post {
 	const file = fs.readFileSync(path, "utf8");
@@ -26,6 +28,8 @@ export function convertMarkdownToPost(path: string): Post {
 		.use(remarkRehype)
 		.use(rehypePrismPlus)
 		.use(rehypeRaw)
+		.use(rehypeSlug)
+		.use(rehypeAutolinkHeadings)
 		.use(rehypeStringify)
 		.processSync(body)
 		.toString();

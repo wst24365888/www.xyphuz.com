@@ -9,6 +9,8 @@ import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import type { About } from "src/models/about";
 import type { AboutAttributes } from "src/models/about_attributes";
+import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import rehypeSlug from "rehype-slug";
 
 export function convertMarkdownToAbout(path: string): About {
 	const file = fs.readFileSync(path, "utf8");
@@ -26,6 +28,8 @@ export function convertMarkdownToAbout(path: string): About {
 		.use(remarkRehype)
 		.use(rehypePrismPlus)
 		.use(rehypeRaw)
+		.use(rehypeSlug)
+		.use(rehypeAutolinkHeadings)
 		.use(rehypeStringify)
 		.processSync(body)
 		.toString();
