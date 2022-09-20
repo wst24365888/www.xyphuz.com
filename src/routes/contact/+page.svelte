@@ -13,7 +13,8 @@
 
 <svelte:head>
 	<title>Contact - Xyphuz</title>
-	<meta name="description" content="This is the official website of Xyphuz." />
+	<link rel="preload" href="/logo_3d/gmail_3d.gltf" />
+	<link rel="preload" href="/logo_3d/github_3d.gltf" />
 </svelte:head>
 
 <section bind:clientWidth={w} bind:clientHeight={h}>
