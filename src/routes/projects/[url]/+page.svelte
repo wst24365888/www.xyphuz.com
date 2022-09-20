@@ -45,7 +45,12 @@
 
 <svelte:head>
 	<title>Project - {data.project.attributes.title}</title>
-</svelte:head>
+    {#if computedPhotoUrls != null}
+		{#each computedPhotoUrls as photoUrl}
+			<link rel="preload" as="image" href={photoUrl} />
+		{/each}
+	{/if}
+	</svelte:head>
 
 <section style="--carousel-opacity: {carouselOpacity}">
 	{#if computedPhotoUrls != null}

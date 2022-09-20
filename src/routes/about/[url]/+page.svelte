@@ -30,6 +30,11 @@
 
 <svelte:head>
 	<title>About - {data.about.attributes.title}</title>
+    {#if data.about.attributes.photoUrls != null}
+		{#each data.about.attributes.photoUrls as photoUrl}
+			<link rel="preload" as="image" href={photoUrl} />
+		{/each}
+	{/if}
 </svelte:head>
 
 <section style="--carousel-opacity: {carouselOpacity}">
