@@ -30,7 +30,7 @@
 		<div id="backgruond-marquee">
 			<Marquee {speed}>
 				Official Website - Xyphuz
-				<div id="divider" />
+				<div class="divider" />
 			</Marquee>
 		</div>
 	</div>
@@ -107,7 +107,7 @@
 		animation: fade-in 2s ease-in-out 1s forwards;
 	}
 
-	#divider {
+	.divider {
 		width: 5vw;
 	}
 
