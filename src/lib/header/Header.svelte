@@ -3,7 +3,7 @@
 	import { onMount } from "svelte";
 	import logo from "./logo.svg";
 
-	export let landscape: boolean = true;
+	export let landscape = true;
 	let mounted = false;
 
 	onMount(() => {

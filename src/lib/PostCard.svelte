@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import type { PostPreview } from 'src/models/post_preview';
+	import { goto } from "$app/navigation";
+	import type { PostPreview } from "src/models/post_preview";
 
 	export let post: PostPreview;
-	$: dateString = new Date(post.attributes.date).toLocaleDateString('en-US', {
-		year: 'numeric',
-		month: 'long',
-		day: 'numeric'
+	$: dateString = new Date(post.attributes.date).toLocaleDateString("en-US", {
+		year: "numeric",
+		month: "long",
+		day: "numeric",
 	});
 
 	function onPostClick() {
@@ -18,7 +18,7 @@
 	}
 </script>
 
-<div class="post-card" on:click="{onPostClick}">
+<div class="post-card" on:click={onPostClick}>
 	<h2>{post.attributes.title}</h2>
 	<p>{post.attributes.description}</p>
 	<div class="card-info">
@@ -37,7 +37,7 @@
 	.post-card {
 		padding: 0.75em 1.5em;
 		border: 1px solid #ccc;
-    	transition: 0.5s;
+		transition: 0.5s;
 	}
 
 	.post-card:hover {
@@ -55,7 +55,7 @@
 		margin: 0.25em 0.5em 0.25em 0;
 		background-color: #eee;
 		padding: 0.25em 0.5em;
-    	transition: 0.5s;
+		transition: 0.5s;
 	}
 
 	.tag:hover {
@@ -71,7 +71,7 @@
 		color: #666;
 	}
 
-    @media (orientation: landscape) {
+	@media (orientation: landscape) {
 		.card-info {
 			display: flex;
 			justify-content: space-between;
@@ -89,7 +89,7 @@
 			display: inline-flex;
 			justify-content: flex-end;
 		}
-    }
+	}
 
 	@media (orientation: portrait) {
 		.tags {

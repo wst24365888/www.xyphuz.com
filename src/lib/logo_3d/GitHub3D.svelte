@@ -18,13 +18,13 @@
 
 	let smoothDelta = 0;
 	useFrame((_, delta) => {
-		if (!started || 1/delta < 1) {
+		if (!started || 1 / delta < 1) {
 			return;
 		}
 
 		smoothDelta = smoothDelta * 0.9 + delta * 0.1;
 
-		rotation += 0.002 * (144 / (1/smoothDelta));
+		rotation += 0.002 * (144 / (1 / smoothDelta));
 	});
 
 	const { onPointerEnter, onPointerLeave } = useCursor();
@@ -40,12 +40,12 @@
 		onPointerLeave();
 	};
 
-	function debounce(func: Function, wait: number) {
+	function debounce(func: () => void, wait: number) {
 		let timeout: NodeJS.Timeout;
-		return function executedFunction(...args: any[]) {
+		return function executedFunction() {
 			const later = () => {
 				clearTimeout(timeout);
-				func(...args);
+				func();
 			};
 
 			clearTimeout(timeout);

@@ -36,7 +36,7 @@
 	</div>
 
 	<div id="canvas">
-		<Canvas>
+		<Canvas size={{ width: w / 2, height: h }}>
 			<Logo3D {zoom} {gltfLoadedCallback} />
 		</Canvas>
 	</div>
@@ -164,7 +164,7 @@
 		#backgruond-marquee-container {
 			margin-bottom: 34vh;
 		}
-		
+
 		#canvas {
 			left: 50vw;
 			width: 50vw;

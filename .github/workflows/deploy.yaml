@@ -31,7 +31,7 @@ jobs:
             type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/www.xyphuz.com:buildcache
           cache-to: >-
             type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/www.xyphuz.com:buildcache,mode=max
-  
+
   deploy-to-vps:
     needs: release-docker
     runs-on: ubuntu-latest

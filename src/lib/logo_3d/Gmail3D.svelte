@@ -18,13 +18,13 @@
 
 	let smoothDelta = 0;
 	useFrame((_, delta) => {
-		if (!started || 1/delta < 1) {
+		if (!started || 1 / delta < 1) {
 			return;
 		}
 
 		smoothDelta = smoothDelta * 0.9 + delta * 0.1;
 
-		rotation += 0.002 * (144 / (1/smoothDelta));
+		rotation += 0.002 * (144 / (1 / smoothDelta));
 	});
 
 	const { onPointerEnter, onPointerLeave } = useCursor();
@@ -40,29 +40,29 @@
 		onPointerLeave();
 	};
 
-	function debounce(func: Function, wait: number) {
+	function debounce(func: () => void, wait: number) {
 		let timeout: NodeJS.Timeout;
-		return function executedFunction(...args: any[]) {
+		return function executedFunction() {
 			const later = () => {
 				clearTimeout(timeout);
-				func(...args);
+				func();
 			};
 
 			clearTimeout(timeout);
 			timeout = setTimeout(later, wait);
 		};
-	};
+	}
 </script>
 
 <Group rotation={{ y: rotation }}>
-	<OrthographicCamera position={{ z: 100, y: 0 }} lookAt={{ y: 0 }} zoom={zoom} />
+	<OrthographicCamera position={{ z: 100, y: 0 }} lookAt={{ y: 0 }} {zoom} />
 </Group>
 
-<GLTF 
-	castShadow 
-	receiveShadow 
-	url={"/logo_3d/gmail_3d.gltf"} 
-	interactive 
+<GLTF
+	castShadow
+	receiveShadow
+	url={"/logo_3d/gmail_3d.gltf"}
+	interactive
 	on:pointerenter={debounce(onPointerEnterHandler, 100)}
 	on:pointerleave={debounce(onPointerLeaveHandler, 100)}
 	on:click={() => window.open("mailto:xyphuzu@gmail.com", "_blank")}

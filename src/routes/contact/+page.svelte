@@ -5,9 +5,9 @@
 	import Gmail3D from "$lib/logo_3d/Gmail3D.svelte";
 
 	let w: number;
-    let h: number;
+	let h: number;
 
-    $: landscape = w > h;
+	$: landscape = w > h;
 	$: zoom = landscape ? w / 15 : w / 6;
 	$: speed = w / 384 + 5;
 </script>
@@ -39,12 +39,12 @@
 
 	<div id="canvas-container">
 		<div id="canvas-github">
-			<Canvas>
+			<Canvas size={{ width: w / (landscape ? 4 : 2), height: h }}>
 				<GitHub3D {zoom} />
 			</Canvas>
 		</div>
 		<div id="canvas-gmail">
-			<Canvas>
+			<Canvas size={{ width: w / (landscape ? 4 : 2), height: h }}>
 				<Gmail3D {zoom} />
 			</Canvas>
 		</div>
@@ -89,7 +89,7 @@
 		width: 100%;
 		height: calc(100% - 5em);
 		z-index: -2;
-        margin-bottom: 2em;
+		margin-bottom: 2em;
 	}
 
 	#backgruond-marquee {
@@ -154,7 +154,7 @@
 		margin: 0;
 		width: 100%;
 		height: 100%;
-        z-index: -1;
+		z-index: -1;
 	}
 
 	.wrapper {
@@ -226,11 +226,11 @@
 		}
 
 		#canvas-github {
-            width: 25vw;
+			width: 25vw;
 		}
 
 		#canvas-gmail {
-            width: 25vw;
+			width: 25vw;
 		}
 	}
 
@@ -288,12 +288,12 @@
 			text-align: right;
 		}
 
-        #canvas-github {
-            width: 50vw;
-        }
+		#canvas-github {
+			width: 50vw;
+		}
 
-        #canvas-gmail {
-            width: 50vw;
-        }
+		#canvas-gmail {
+			width: 50vw;
+		}
 	}
 </style>

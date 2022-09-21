@@ -7,7 +7,7 @@
 		OrthographicCamera,
 		useFrame,
 	} from "@threlte/core";
-	import { GLTF, useGltf } from "@threlte/extras";
+	import { useGltf } from "@threlte/extras";
 
 	export let zoom: number;
 	let rotation = 0;
@@ -31,7 +31,7 @@
 	const { gltf } = useGltf("/logo_3d/logo_3d.gltf", {
 		useDraco: true,
 	});
-	
+
 	export let gltfLoadedCallback: () => void;
 	$: if (gltf) {
 		gltfLoadedCallback();

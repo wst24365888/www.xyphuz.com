@@ -6,37 +6,37 @@
 
 	export let data: PageData;
 
-	let showCarouesel = false;	
+	let showCarouesel = false;
 	setTimeout(() => {
 		showCarouesel = true;
 		console.log("showCarouesel = true");
 	}, 800);
 
-    let carouselWidth = "0px";
+	let carouselWidth = "0px";
 	let carouselOpacity = 0;
 	setTimeout(() => {
 		carouselOpacity = 1;
-        carouselWidth = "100%";
+		carouselWidth = "100%";
 	}, 1200);
 
-    $: splideOptions = {
-        type: "loop",
-        width: carouselWidth,
-        height: "25em",
-        autoWidth: true,
-        focus: "center",
-        autoplay: true,
-        interval: 3000,
-        speed: 1000,
-        lazyLoad: true,
-        pauseOnHover: false,
-        pauseOnFocus: false,
-    } as Options;
+	$: splideOptions = {
+		type: "loop",
+		width: carouselWidth,
+		height: "25em",
+		autoWidth: true,
+		focus: "center",
+		autoplay: true,
+		interval: 3000,
+		speed: 1000,
+		lazyLoad: true,
+		pauseOnHover: false,
+		pauseOnFocus: false,
+	} as Options;
 </script>
 
 <svelte:head>
 	<title>About - {data.about.attributes.title}</title>
-    {#if data.about.attributes.photoUrls != null}
+	{#if data.about.attributes.photoUrls != null}
 		{#each data.about.attributes.photoUrls as photoUrl}
 			<link rel="preload" as="image" href={photoUrl} />
 		{/each}
@@ -53,7 +53,7 @@
 			{/each}
 		</Splide>
 	{:else}
-		<div style="height: 25em"></div>
+		<div style="height: 25em" />
 	{/if}
 
 	<div id="article-container">
