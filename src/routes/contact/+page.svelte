@@ -226,11 +226,11 @@
 		}
 
 		#canvas-github {
-            width: 25%;
+            width: 25vw;
 		}
 
 		#canvas-gmail {
-            width: 25%;
+            width: 25vw;
 		}
 	}
 
@@ -289,11 +289,11 @@
 		}
 
         #canvas-github {
-            width: 50%;
+            width: 50vw;
         }
 
         #canvas-gmail {
-            width: 50%;
+            width: 50vw;
         }
 	}
 </style>
