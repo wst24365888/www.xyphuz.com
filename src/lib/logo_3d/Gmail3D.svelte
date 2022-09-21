@@ -12,9 +12,6 @@
 	let rotation = 0;
 
 	let started = false;
-	setTimeout(() => {
-		started = true;
-	}, 3000);
 
 	let smoothDelta = 0;
 	useFrame((_, delta) => {
@@ -52,6 +49,12 @@
 			timeout = setTimeout(later, wait);
 		};
 	}
+
+	function onGltfLoaded() {
+		setTimeout(() => {
+			started = true;
+		}, 3000);
+	}
 </script>
 
 <Group rotation={{ y: rotation }}>
@@ -69,6 +72,7 @@
 	rotation={{ x: Math.PI / 2 }}
 	scale={{ x: scale, y: scale, z: scale }}
 	useDraco
+	on:load={onGltfLoaded}
 />
 
 <DirectionalLight shadow position={{ x: 0, y: 100, z: 10 }} intensity={1} />

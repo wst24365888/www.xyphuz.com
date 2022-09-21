@@ -13,9 +13,6 @@
 	let rotation = 0;
 
 	let started = false;
-	setTimeout(() => {
-		started = true;
-	}, 3000);
 
 	let smoothDelta = 0;
 	useFrame((_, delta) => {
@@ -32,9 +29,13 @@
 		useDraco: true,
 	});
 
-	export let gltfLoadedCallback: () => void;
+	export let onGltfLoadedCallback: () => void;
 	$: if ($gltf) {
-		gltfLoadedCallback();
+		onGltfLoadedCallback();
+
+		setTimeout(() => {
+			started = true;
+		}, 3000);
 	}
 </script>
 

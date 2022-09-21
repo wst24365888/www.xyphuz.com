@@ -11,7 +11,7 @@
 
 	let logoOpacity = 0;
 
-	function gltfLoadedCallback() {
+	function onGltfLoadedCallback() {
 		setTimeout(() => {
 			logoOpacity = 1;
 		}, 2000);
@@ -37,7 +37,7 @@
 
 	<div id="canvas">
 		<Canvas size={{ width: w, height: h }}>
-			<Logo3D {zoom} {gltfLoadedCallback} />
+			<Logo3D {zoom} {onGltfLoadedCallback} />
 		</Canvas>
 	</div>
 
