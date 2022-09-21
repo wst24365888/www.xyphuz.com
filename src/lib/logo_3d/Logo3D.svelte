@@ -33,7 +33,7 @@
 	});
 
 	export let gltfLoadedCallback: () => void;
-	$: if (gltf) {
+	$: if ($gltf) {
 		gltfLoadedCallback();
 	}
 </script>

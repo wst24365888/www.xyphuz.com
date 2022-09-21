@@ -36,7 +36,7 @@
 	</div>
 
 	<div id="canvas">
-		<Canvas size={{ width: w / 2, height: h }}>
+		<Canvas size={{ width: w, height: h }}>
 			<Logo3D {zoom} {gltfLoadedCallback} />
 		</Canvas>
 	</div>
