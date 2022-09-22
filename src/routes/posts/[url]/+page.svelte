@@ -11,6 +11,23 @@
 
 <svelte:head>
 	<title>Post - {data.post.attributes.title}</title>
+
+	<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous" />
+	<link
+		rel="preload"
+		as="style"
+		href="https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-night-owl.min.css"
+		integrity="sha512-MXRiGOm1i9a1yooXJgIZhA+q5XHvP+iHXn0ardNqqdE3ixpQBvjR0NCkFTR0Jic6jmhhnpviB87P+tK3zuzuSg=="
+		crossorigin="anonymous"
+		referrerpolicy="no-referrer"
+	/>
+	<link
+		rel="stylesheet"
+		href="https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-night-owl.min.css"
+		integrity="sha512-MXRiGOm1i9a1yooXJgIZhA+q5XHvP+iHXn0ardNqqdE3ixpQBvjR0NCkFTR0Jic6jmhhnpviB87P+tK3zuzuSg=="
+		crossorigin="anonymous"
+		referrerpolicy="no-referrer"
+	/>
 </svelte:head>
 
 <section>
