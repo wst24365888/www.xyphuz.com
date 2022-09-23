@@ -1,38 +1,40 @@
-# create-svelte
+# www.xyphuz.com
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/master/packages/create-svelte).
+![www.xyphuz.com](https://socialify.git.ci/wst24365888/www.xyphuz.com/image?description=1&font=KoHo&name=1&owner=1&pattern=Circuit%20Board&theme=Light)
 
-## Creating a project
+[![Stargazers][stars-shield]][stars-url]
 
-If you're seeing this, you've probably already done this step. Congrats!
+## About
 
-```bash
-# create a new project in the current directory
-npm create svelte@latest
+My personal website using [SvelteKit](https://kit.svelte.dev/) with TypeScript.
 
-# create a new project in my-app
-npm create svelte@latest my-app
-```
+Please head over to <https://www.xyphuz.com> to find out more!
 
-## Developing
+<p align="right">(<a href="#top">back to top</a>)</p>
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+## Roadmap
 
-```bash
-npm run dev
+- [ ] Improve UX.
+- [ ] Add tests.
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
+Feel free to [open an issue](https://github.com/wst24365888/www.xyphuz.com/issues) if you have any questions.
 
-## Building
+<p align="right">(<a href="#top">back to top</a>)</p>
 
-To create a production version of your app:
+[stars-shield]: https://img.shields.io/github/stars/wst24365888/www.xyphuz.com.svg?style=for-the-badge
+[stars-url]: https://github.com/wst24365888/www.xyphuz.com/stargazers
 
-```bash
-npm run build
-```
+## Contact
 
-You can preview the production build with `npm run preview`.
+### Author
 
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+- HSING-HAN, WU (Xyphuz)
+  - Mail me: xyphuzwu@gmail.com
+  - About me: <https://www.xyphuz.com>
+  - GitHub: <https://github.com/wst24365888>
+
+### Project Link
+
+- <https://github.com/wst24365888/www.xyphuz.com>
+
+<p align="right">(<a href="#top">back to top</a>)</p>
