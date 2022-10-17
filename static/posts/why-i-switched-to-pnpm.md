@@ -330,7 +330,7 @@ So, we can see that dependencies of express are not in `.pnpm/express@4.17.1/nod
 
 #### Symlinked `node_modules` Structure
 
-Let's say you install `foo@1.0.0` that depends on `bar@1.0.0`. `pnpm` will ***hard link*** both packages to node_modules like this:
+Let's say you install `foo@1.0.0` that depends on `bar@1.0.0`. `pnpm` will ***hard link*** both packages to `node_modules` like this:
 
 ```bash {5,8}
 node_modules
