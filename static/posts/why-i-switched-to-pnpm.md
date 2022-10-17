@@ -66,16 +66,16 @@ Before `npm v3`, you can see if you have multiple packages that depend on the sa
 node_modules
 ├── A@1.0.0
 │   └── node_modules
-│       └── B@1.0.0
+│       └── B@1.0.0             <-- B HERE
 │       └── C@1.0.0
 │            └── node_modules
-│                └── B@1.0.0
+│                └── B@1.0.0    <-- B HERE
 ├── C@1.0.0
 │   └── node_modules
-│       └── B@2.0.0
+│       └── B@1.0.0             <-- B HERE
 └── D@1.0.0
     └── node_modules
-        └── B@1.0.0
+        └── B@1.0.0             <-- B HERE
 ```
 
 That seems to be quite a waste of disk space, right?
@@ -406,7 +406,7 @@ pnpm audit
 pnpm list
 pnpm outdated
 pnpm why
-Run scripts
+# Run scripts
 pnpm run
 pnpm test
 pnpm exec
