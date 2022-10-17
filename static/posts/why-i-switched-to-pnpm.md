@@ -170,9 +170,9 @@ Here's the top of what you get in the `npm` directory's `node_modules`:
 └── vary
 ```
 
-Since it's flat, users have access to all the dependencies, including those they are not installed.
+Since it's flat, users have access to all the dependencies, **including those they are not installed**.
 
-*It's dangerous to have access to those dependencies that you're not installing.*
+> *It's dangerous to have access to those dependencies that you're not installing.*
 
 Here is what `pnpm` version looks like:
 
@@ -183,7 +183,7 @@ Here is what `pnpm` version looks like:
 └── express
 ```
 
-You'll find that express is a symlink to 
+You'll find that `express` is a symlink to 
 `node_modules/.pnpm/express@4.17.1/node_modules/express`.
 
 ```bash {19,23-24,26-27,36-37}
