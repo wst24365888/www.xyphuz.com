@@ -41,7 +41,7 @@ There is no blocking stages of installation in `pnpm`.
 
 You may have seen some memes about `node_modules` size.
 
-![](https://i.imgur.com/YXAylI3.png)
+![](https://preview.redd.it/fw31b02wfkez.png?auto=webp&s=0c679cd431ea56eed2e49d3f79ef8e522e9f6c45)
 
 ![](https://i.imgur.com/4h0Ptg7.png)
 
