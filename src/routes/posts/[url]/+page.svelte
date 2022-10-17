@@ -33,6 +33,7 @@
 <section>
 	<article>
 		<h1 id="title">{data.post.attributes.title}</h1>
+		<p id="description">{data.post.attributes.description}</p>
 		<div id="date">{dateString}</div>
 		<hr />
 		{@html data.post.html}
@@ -52,7 +53,12 @@
 
 	#title {
 		margin-top: 0.25em;
-		margin-bottom: 1.25em;
+		margin-bottom: 0.5em;
+	}
+
+	#description {
+		font-style: italic;
+		color: #888;
 	}
 
 	hr {

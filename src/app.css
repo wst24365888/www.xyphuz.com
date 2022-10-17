@@ -77,8 +77,21 @@ pre {
 .highlight-line {
 	margin-left: -16px;
 	margin-right: -16px;
-	background-color: rgba(55, 65, 81, 0.1); /* Set highlight bg color */
+	background-color: rgba(55, 65, 81, 0.4); /* Set highlight bg color */
 	border-left: 4px solid rgb(59, 130, 246); /* Set highlight accent border color */
+}
+
+article p code, article h2 code, article h3 code, article h4 code, article h5 code, article h6 code {	
+	padding: 0.2em 0.35em;
+	background-color: #efefef;
+	font-size: 1.05em;
+}
+
+article blockquote {	
+	margin: 0;
+	padding: 1em 2em;
+	background-color: #efefef;
+	color: #666;
 }
 
 .line-number::before {
