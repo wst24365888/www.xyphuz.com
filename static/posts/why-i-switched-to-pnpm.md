@@ -53,7 +53,7 @@ And this is the slogan from `pnpm`:
 
 > Saving disk space and boosting installation speed
 
-Why `pnpm` saves disk space?
+So, why `pnpm` saves disk space?
 
 Before this, let's talk about `node_modules` structure in `npm`/`yarn`.
 
@@ -110,6 +110,8 @@ What happened if we make a clean install with same `package.json`?
 ![](https://imgur.com/LpwtSO6.png)
 
 Same dependencies but not same directory structure, which is ***non-deterministic***.
+
+That's bad, right?
 
 
 ### Dependency (`node_modules`) Structure of `pnpm`
@@ -173,6 +175,8 @@ Here's the top of what you get in the `npm` directory's `node_modules`:
 Since it's flat, users have access to all the dependencies, **including those they are not installed**.
 
 > *It's dangerous to have access to those dependencies that you're not installing.*
+
+That's not good.
 
 Here is what `pnpm` version looks like:
 
