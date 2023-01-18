@@ -4,19 +4,9 @@ const { glob } = pkg;
 export async function GET(): Promise<Response> {
 	const sitePrefix = "https://www.xyphuz.com";
 
-	const normalRoutes = [
-		"",
-		"about",
-		"projects",
-		"blog",
-		"contact",
-	];
+	const normalRoutes = ["", "about", "projects", "blog", "contact"];
 
-	const mdRoutes = [
-		"about",
-		"projects",
-		"posts",
-	];
+	const mdRoutes = ["about", "projects", "posts"];
 
 	const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset
@@ -27,20 +17,30 @@ export async function GET(): Promise<Response> {
 	xmlns:image="https://www.google.com/schemas/sitemap-image/1.1"
 	xmlns:video="https://www.google.com/schemas/sitemap-video/1.1"
 >
-	${normalRoutes.map((route) => `<url>
+	${normalRoutes
+		.map(
+			(route) => `<url>
 			<loc>${sitePrefix}/${route}</loc>
 		</url>
-	`).join("")}
-	${mdRoutes.map((route) => `
-		${glob.sync(`static/${route}/*.md`).map((filePath) => {
-		const url = filePath.replace("static/", "").replace(".md", "");
-		return `<url>
+	`,
+		)
+		.join("")}
+	${mdRoutes
+		.map(
+			(route) => `
+		${glob
+			.sync(`static/${route}/*.md`)
+			.map((filePath) => {
+				const url = filePath.replace("static/", "").replace(".md", "");
+				return `<url>
 					<loc>${sitePrefix}/${url}</loc>
 				</url>
 				`;
-	}
-	).join("")}
-	`).join("")}
+			})
+			.join("")}
+	`,
+		)
+		.join("")}
 </urlset>
 	`;
 

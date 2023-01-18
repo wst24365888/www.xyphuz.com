@@ -8,7 +8,8 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check . && eslint .",
-		"format": "prettier --write ."
+		"format": "prettier --write .",
+		"prepare": "husky install"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^1.0.1",
@@ -22,6 +23,8 @@
 		"eslint": "^8.32.0",
 		"eslint-config-prettier": "^8.6.0",
 		"eslint-plugin-svelte3": "^4.0.0",
+		"husky": "^8.0.3",
+		"lint-staged": "^13.1.0",
 		"prettier": "^2.8.3",
 		"prettier-plugin-svelte": "^2.9.0",
 		"svelte": "^3.55.1",
@@ -51,5 +54,11 @@
 		"svelte-fast-marquee": "^0.4.1",
 		"three": "^0.148.0",
 		"unified": "^10.1.2"
-	}
+	},
+	"lint-staged": {
+        "*.{ts,js}": [
+            "eslint --fix",
+            "prettier --write"
+        ]
+    }
 }

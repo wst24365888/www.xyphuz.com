@@ -1,6 +1,5 @@
 import type { PostPreview } from "../../../models/post_preview";
 
-
 export const prerender = "auto";
 
 export async function load({

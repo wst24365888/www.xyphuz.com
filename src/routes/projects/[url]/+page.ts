@@ -1,6 +1,5 @@
 import type { Project } from "../../../models/project";
 
-
 export const prerender = "auto";
 
 export async function load({

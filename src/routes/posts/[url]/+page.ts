@@ -1,6 +1,5 @@
 import type { Post } from "../../../models/post";
 
-
 export const prerender = "auto";
 
 export async function load({

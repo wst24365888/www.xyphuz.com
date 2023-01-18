@@ -16,24 +16,31 @@ body {
 	overflow-y: overlay;
 }
 
-article>p,
+article > p,
 ul {
 	line-height: 2.25;
 }
 
-a:not(article > h1 > a, article > h2 > a, article > h3 > a, article > h4 > a, article > h5 > a, article > h6 > a) {
+a:not(
+		article > h1 > a,
+		article > h2 > a,
+		article > h3 > a,
+		article > h4 > a,
+		article > h5 > a,
+		article > h6 > a
+	) {
 	margin: 0;
 	font-weight: 200;
 	color: var(--accent-color);
 	text-decoration: none;
 }
 
-article>h1>a,
-article>h2>a,
-article>h3>a,
-article>h4>a,
-article>h5>a,
-article>h6>a {
+article > h1 > a,
+article > h2 > a,
+article > h3 > a,
+article > h4 > a,
+article > h5 > a,
+article > h6 > a {
 	color: black;
 	text-decoration: none;
 }
@@ -50,7 +57,7 @@ article h6 code {
 	overflow-wrap: break-word;
 }
 
-article ul>li>a {
+article ul > li > a {
 	overflow-wrap: break-word;
 }
 

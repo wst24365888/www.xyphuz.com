@@ -1,6 +1,5 @@
 import type { ProjectPreview } from "../../models/project_preview";
 
-
 export const prerender = true;
 
 export async function load({

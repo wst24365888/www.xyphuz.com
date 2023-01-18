@@ -1,6 +1,5 @@
 import type { AboutPreview } from "../../models/about_preview";
 
-
 export const prerender = true;
 
 export async function load({
