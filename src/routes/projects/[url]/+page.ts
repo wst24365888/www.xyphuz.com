@@ -1,4 +1,5 @@
-import type { Project } from "src/models/project";
+import type { Project } from "../../../models/project";
+
 
 export const prerender = "auto";
 

@@ -1,4 +1,5 @@
-import type { ProjectPreview } from "src/models/project_preview";
+import type { ProjectPreview } from "../../models/project_preview";
+
 
 export const prerender = true;
 

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
-	import type { PostPreview } from "src/models/post_preview";
+	import type { PostPreview } from "../models/post_preview";
 
 	export let post: PostPreview;
 	$: dateString = new Date(post.attributes.date).toLocaleDateString("en-US", {
@@ -18,13 +18,13 @@
 	}
 </script>
 
-<div class="post-card" on:click={onPostClick}>
+<div class="post-card" on:click={onPostClick} on:keypress={onPostClick}>
 	<h2>{post.attributes.title}</h2>
 	<p>{post.attributes.description}</p>
 	<div class="card-info">
 		<div class="tags">
 			{#each post.attributes.tags as tag}
-				<div class="tag" on:click|stopPropagation={() => onTagClick(tag)}>
+				<div class="tag" on:click|stopPropagation={() => onTagClick(tag)} on:keypress|stopPropagation={() => onTagClick(tag)}>
 					# {tag}
 				</div>
 			{/each}

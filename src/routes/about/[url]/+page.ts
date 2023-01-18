@@ -1,4 +1,5 @@
-import type { About } from "src/models/about";
+import type { About } from "../../../models/about";
+
 
 export const prerender = "auto";
 

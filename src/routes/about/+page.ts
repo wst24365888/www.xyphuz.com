@@ -1,4 +1,5 @@
-import type { AboutPreview } from "src/models/about_preview";
+import type { AboutPreview } from "../../models/about_preview";
+
 
 export const prerender = true;
 

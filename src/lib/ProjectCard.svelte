@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
-	import type { ProjectPreview } from "src/models/project_preview";
+	import type { ProjectPreview } from "../models/project_preview";
 
 	export let project: ProjectPreview;
 
@@ -9,7 +9,7 @@
 	}
 </script>
 
-<div class="project-card" on:click={onProjectClick}>
+<div class="project-card" on:click={onProjectClick} on:keypress={onProjectClick}>
 	<h2>{project.attributes.title}</h2>
 	<div class="card-info">
 		<p>{project.attributes.description}</p>

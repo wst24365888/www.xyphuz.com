@@ -1,4 +1,5 @@
-import type { Post } from "src/models/post";
+import type { Post } from "../../../models/post";
+
 
 export const prerender = "auto";
 

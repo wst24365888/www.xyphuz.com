@@ -24,7 +24,7 @@
 	</div>
 
 	{#if mounted && landscape}
-		<nav data-sveltekit-prefetch>
+		<nav>
 			<ul>
 				<li class:active={$page.url.pathname === "/"}>
 					<a href="/">Home</a>
@@ -47,7 +47,7 @@
 
 	<div class="corner">
 		{#if mounted && !landscape}
-			<div id="menu-icon" on:click={toggleMenu}>
+			<div id="menu-icon" on:click={toggleMenu} on:keypress={toggleMenu}>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					x="0px"

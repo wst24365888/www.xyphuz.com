@@ -1,4 +1,5 @@
-import type { PostPreview } from "src/models/post_preview";
+import type { PostPreview } from "../../models/post_preview";
+
 
 export const prerender = true;
 
