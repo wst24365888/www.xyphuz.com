@@ -5,12 +5,12 @@ import rehypePrismPlus from "rehype-prism-plus";
 import rehypeRaw from "rehype-raw";
 import remarkRehype from "remark-rehype";
 import rehypeStringify from "rehype-stringify";
-import type { PostAttributes } from "src/models/post_attributes";
-import type { Post } from "src/models/post";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeSlug from "rehype-slug";
+import type { Post } from "../../models/post";
+import type { PostAttributes } from "../../models/post_attributes";
 
 export function convertMarkdownToPost(path: string): Post {
 	const file = fs.readFileSync(path, "utf8");

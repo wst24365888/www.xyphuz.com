@@ -7,10 +7,10 @@ import remarkRehype from "remark-rehype";
 import rehypeStringify from "rehype-stringify";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
-import type { Project } from "src/models/project";
-import type { ProjectAttributes } from "src/models/project_attributes";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeSlug from "rehype-slug";
+import type { Project } from "../../models/project";
+import type { ProjectAttributes } from "../../models/project_attributes";
 
 export function convertMarkdownToProject(path: string): Project {
 	const file = fs.readFileSync(path, "utf8");

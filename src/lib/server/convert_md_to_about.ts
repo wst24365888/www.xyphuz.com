@@ -7,10 +7,10 @@ import remarkRehype from "remark-rehype";
 import rehypeStringify from "rehype-stringify";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
-import type { About } from "src/models/about";
-import type { AboutAttributes } from "src/models/about_attributes";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeSlug from "rehype-slug";
+import type { About } from "../../models/about";
+import type { AboutAttributes } from "../../models/about_attributes";
 
 export function convertMarkdownToAbout(path: string): About {
 	const file = fs.readFileSync(path, "utf8");
