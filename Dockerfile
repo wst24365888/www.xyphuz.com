@@ -1,4 +1,4 @@
-FROM node:18.9.0-alpine3.15 AS builder
+FROM node:18.8.0-alpine3.15 AS builder
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ RUN npm install -g pnpm
 RUN pnpm install --frozen-lockfile
 RUN pnpm run build
 
-FROM node:18.9.0-alpine3.15
+FROM node:18.8.0-alpine3.15
 
 WORKDIR /app
 
