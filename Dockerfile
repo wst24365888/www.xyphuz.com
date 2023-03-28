@@ -9,7 +9,7 @@ RUN echo ${NODE_OPTIONS}
 
 RUN apk add --no-cache libc6-compat
 RUN npm install -g pnpm
-RUN pnpm install --frozen-lockfile --no-verify-store-integrity
+RUN pnpm install --frozen-lockfile
 RUN pnpm run build
 
 FROM node:18.8.0-alpine3.15
