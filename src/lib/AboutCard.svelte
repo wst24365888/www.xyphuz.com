@@ -9,8 +9,10 @@
 	}
 </script>
 
-<div class="about-card" on:click={onAboutClick} on:keypress={onAboutClick}>
-	<h2>{about.attributes.title}</h2>
+<div class="about-card" on:click={onAboutClick} on:keypress={onAboutClick} data-sveltekit-preload-data>
+	<a href={about.url}>
+		<h2>{about.attributes.title}</h2>
+	</a>
 	<div class="card-info">
 		<p>{about.attributes.description}</p>
 		<p>{about.attributes.dateString ?? ""}</p>
@@ -42,5 +44,10 @@
 	p {
 		font-weight: 300;
 		color: #666;
+	}
+
+	a {
+		text-decoration: none;
+		color: #000;
 	}
 </style>

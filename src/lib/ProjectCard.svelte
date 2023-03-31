@@ -9,8 +9,10 @@
 	}
 </script>
 
-<div class="project-card" on:click={onProjectClick} on:keypress={onProjectClick}>
-	<h2>{project.attributes.title}</h2>
+<div class="project-card" on:click={onProjectClick} on:keypress={onProjectClick} data-sveltekit-preload-data>
+	<a href={project.url}>
+		<h2>{project.attributes.title}</h2>
+	</a>
 	<div class="card-info">
 		<p>{project.attributes.description}</p>
 		<p>{project.attributes.dateString ?? ""}</p>
@@ -42,5 +44,10 @@
 	p {
 		font-weight: 300;
 		color: #666;
+	}
+
+	a {
+		text-decoration: none;
+		color: #000;
 	}
 </style>

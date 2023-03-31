@@ -17,7 +17,7 @@
 </script>
 
 <header>
-	<div class="corner">
+	<div class="corner" data-sveltekit-preload-data>
 		<a href="/">
 			<img src={logo} alt="logo" />
 		</a>
@@ -26,19 +26,19 @@
 	{#if mounted && landscape}
 		<nav>
 			<ul>
-				<li class:active={$page.url.pathname === "/"}>
+				<li class:active={$page.url.pathname === "/"} data-sveltekit-preload-data>
 					<a href="/">Home</a>
 				</li>
-				<li class:active={$page.url.pathname === "/about"}>
+				<li class:active={$page.url.pathname === "/about"} data-sveltekit-preload-data>
 					<a href="/about">About</a>
 				</li>
-				<li class:active={$page.url.pathname === "/projects"}>
+				<li class:active={$page.url.pathname === "/projects"} data-sveltekit-preload-data>
 					<a href="/projects">Projects</a>
 				</li>
-				<li class:active={$page.url.pathname === "/blog"}>
+				<li class:active={$page.url.pathname === "/blog"} data-sveltekit-preload-data>
 					<a href="/blog">Blog</a>
 				</li>
-				<li class:active={$page.url.pathname === "/contact"}>
+				<li class:active={$page.url.pathname === "/contact"} data-sveltekit-preload-data>
 					<a href="/contact">Contact</a>
 				</li>
 			</ul>
@@ -64,11 +64,11 @@
 			{#if expandMenu}
 				<div id="menu-container">
 					<div id="menu">
-						<a href="/" on:click={toggleMenu}>Home</a>
-						<a href="/about" on:click={toggleMenu}>About</a>
-						<a href="/projects" on:click={toggleMenu}>Projects</a>
-						<a href="/blog" on:click={toggleMenu}>Blog</a>
-						<a href="/contact" on:click={toggleMenu}>Contact</a>
+						<a href="/" on:click={toggleMenu} data-sveltekit-preload-data>Home</a>
+						<a href="/about" on:click={toggleMenu} data-sveltekit-preload-data>About</a>
+						<a href="/projects" on:click={toggleMenu} data-sveltekit-preload-data>Projects</a>
+						<a href="/blog" on:click={toggleMenu} data-sveltekit-preload-data>Blog</a>
+						<a href="/contact" on:click={toggleMenu} data-sveltekit-preload-data>Contact</a>
 					</div>
 				</div>
 			{/if}

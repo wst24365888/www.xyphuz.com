@@ -18,8 +18,10 @@
 	}
 </script>
 
-<div class="post-card" on:click={onPostClick} on:keypress={onPostClick}>
-	<h2>{post.attributes.title}</h2>
+<div class="post-card" on:click={onPostClick} on:keypress={onPostClick} data-sveltekit-preload-data>
+	<a href={post.url}>
+		<h2>{post.attributes.title}</h2>
+	</a>
 	<p>{post.attributes.description}</p>
 	<div class="card-info">
 		<div class="tags">
@@ -69,6 +71,11 @@
 	p {
 		font-weight: 300;
 		color: #666;
+	}	
+
+	a {
+		text-decoration: none;
+		color: #000;
 	}
 
 	@media (orientation: landscape) {
