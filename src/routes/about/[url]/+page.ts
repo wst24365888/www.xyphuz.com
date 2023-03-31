@@ -1,6 +1,6 @@
 import type { About } from "../../../models/about";
 
-export const prerender = "auto";
+export const prerender = false;
 
 export async function load({
 	params,
