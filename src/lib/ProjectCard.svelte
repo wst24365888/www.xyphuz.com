@@ -9,7 +9,12 @@
 	}
 </script>
 
-<div class="project-card" on:click={onProjectClick} on:keypress={onProjectClick} data-sveltekit-preload-data>
+<div
+	class="project-card"
+	on:click={onProjectClick}
+	on:keypress={onProjectClick}
+	data-sveltekit-preload-data
+>
 	<a href={project.url}>
 		<h2>{project.attributes.title}</h2>
 	</a>

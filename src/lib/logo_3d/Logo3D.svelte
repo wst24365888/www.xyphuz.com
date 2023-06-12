@@ -1,31 +1,23 @@
 <script lang="ts">
-	import {
-		AmbientLight,
-		DirectionalLight,
-		Group,
-		Object3DInstance,
-		OrthographicCamera,
-		useFrame,
-	} from "@threlte/core";
+	import { T, useFrame } from "@threlte/core";
 	import { useGltf } from "@threlte/extras";
+	import * as THREE from "three";
 
 	export let zoom: number;
 	let rotation = 0;
+	let model: THREE.Object3D | undefined;
 
 	let started = false;
 
-	let smoothDelta = 0;
-	useFrame((_, delta) => {
-		if (!started || 1 / delta < 1) {
+	useFrame(() => {
+		if (!started || !model) {
 			return;
 		}
 
-		smoothDelta = smoothDelta * 0.9 + delta * 0.1;
-
-		rotation += 0.002 * (144 / (1 / smoothDelta));
+		model.setRotationFromEuler(new THREE.Euler(Math.PI / 2, 0, (rotation += 0.002)));
 	});
 
-	const { gltf } = useGltf("/logo_3d/logo_3d.gltf", {
+	const gltf = useGltf("/logo_3d/logo_3d.gltf", {
 		useDraco: true,
 	});
 
@@ -39,21 +31,20 @@
 	}
 </script>
 
-<Group rotation={{ y: rotation }}>
-	<OrthographicCamera position={{ z: 100, y: 0 }} lookAt={{ y: 0 }} {zoom} />
-</Group>
+<T.OrthographicCamera makeDefault position={[0, 0, 100]} {zoom} />
 
 {#if $gltf && $gltf.nodes["Scene"] != undefined}
-	<Object3DInstance
+	<T
 		castShadow
 		receiveShadow
-		rotation={{ x: Math.PI / 2 }}
-		object={$gltf.nodes["Scene"]}
+		rotation={[Math.PI / 2, 0, 0]}
+		is={$gltf.nodes["Scene"]}
+		bind:ref={model}
 	/>
 {/if}
 
-<DirectionalLight shadow position={{ x: 0, y: 10, z: 10 }} intensity={2} />
-<DirectionalLight shadow position={{ x: 10, y: 10, z: 0 }} intensity={2} />
-<DirectionalLight shadow position={{ x: 0, y: 10, z: -10 }} intensity={2} />
-<DirectionalLight shadow position={{ x: -10, y: 10, z: 0 }} intensity={2} />
-<AmbientLight intensity={0.5} />
+<T.DirectionalLight castShadow position={[0, 100, 10]} intensity={1} />
+<T.DirectionalLight castShadow position={[10, 100, 0]} intensity={1} />
+<T.DirectionalLight castShadow position={[0, 100, -10]} intensity={1} />
+<T.DirectionalLight castShadow position={[-10, 100, 0]} intensity={1} />
+<T.AmbientLight intensity={0.75} />

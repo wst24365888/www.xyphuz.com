@@ -26,7 +26,11 @@
 	<div class="card-info">
 		<div class="tags">
 			{#each post.attributes.tags as tag}
-				<div class="tag" on:click|stopPropagation={() => onTagClick(tag)} on:keypress|stopPropagation={() => onTagClick(tag)}>
+				<div
+					class="tag"
+					on:click|stopPropagation={() => onTagClick(tag)}
+					on:keypress|stopPropagation={() => onTagClick(tag)}
+				>
 					# {tag}
 				</div>
 			{/each}
@@ -71,7 +75,7 @@
 	p {
 		font-weight: 300;
 		color: #666;
-	}	
+	}
 
 	a {
 		text-decoration: none;

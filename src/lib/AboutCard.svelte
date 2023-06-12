@@ -9,7 +9,12 @@
 	}
 </script>
 
-<div class="about-card" on:click={onAboutClick} on:keypress={onAboutClick} data-sveltekit-preload-data>
+<div
+	class="about-card"
+	on:click={onAboutClick}
+	on:keypress={onAboutClick}
+	data-sveltekit-preload-data
+>
 	<a href={about.url}>
 		<h2>{about.attributes.title}</h2>
 	</a>
