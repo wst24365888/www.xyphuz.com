@@ -13,12 +13,15 @@
 
 	let started = false;
 
-	useFrame(() => {
-		if (!started || !model) {
+	let smoothDelta = 0;
+	useFrame((_, delta) => {
+		if (!started || 1 / delta < 1 || !model) {
 			return;
 		}
-
-		model.setRotationFromEuler(new THREE.Euler(Math.PI / 2, 0, (rotation += 0.002)));
+		smoothDelta = smoothDelta * 0.9 + delta * 0.1;
+		model.setRotationFromEuler(
+			new THREE.Euler(Math.PI / 2, 0, (rotation += 0.002 * (144 / (1 / smoothDelta)))),
+		);
 	});
 
 	const scale = tweened(1, {

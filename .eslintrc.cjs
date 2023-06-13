@@ -22,6 +22,7 @@ module.exports = {
 		quotes: ["error", "double"],
 		semi: ["error", "always"],
 		"prettier/prettier": "error",
+		"svelte/no-at-html-tags": "off",
 	},
 	overrides: [
 		{

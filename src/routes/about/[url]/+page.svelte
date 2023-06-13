@@ -43,7 +43,10 @@
 	{/if}
 </svelte:head>
 
-<section style="--carousel-opacity: {carouselOpacity}">
+<section
+	class="flex flex-col items-center justify-center"
+	style="--carousel-opacity: {carouselOpacity}"
+>
 	{#if showCarouesel && data.about.attributes.photoUrls != null}
 		<Splide options={splideOptions}>
 			{#each data.about.attributes.photoUrls as photoUrl}
@@ -56,82 +59,27 @@
 		<div style="height: 25em" />
 	{/if}
 
-	<div id="article-container">
-		<article>
-			<h1 id="title">{data.about.attributes.title}</h1>
-			<div id="description">{data.about.attributes.description}</div>
+	<div class="flex w-full flex-col items-center justify-center px-10 pb-8 pt-16">
+		<article class="prose w-full md:w-1/2">
+			<h1 class="mb-5 mt-1">{data.about.attributes.title}</h1>
+			<div class=" text-gray-400">{data.about.attributes.description}</div>
 			{#if data.about.attributes.dateString}
-				<div id="date">{data.about.attributes.dateString}</div>
+				<div class="mt-1 text-gray-400">{data.about.attributes.dateString}</div>
 			{/if}
-			<hr />
+			<hr class="mb-12 mt-5 border border-solid border-gray-100" />
 			{@html data.about.html}
 		</article>
 	</div>
 </section>
 
 <style>
-	section {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-	}
-
 	section :global(.splide) {
 		transition: opacity 1s ease-in-out;
 		opacity: var(--carousel-opacity);
 	}
 
-	#article-container {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		padding: 4em 2.5em 2em 2.5em;
-	}
-
 	article :global(img) {
 		max-width: 100%;
-	}
-
-	#title {
-		margin-top: 0.25em;
-		margin-bottom: 1.25em;
-	}
-
-	#description {
-		color: #888;
-	}
-
-	#date {
-		margin-top: 0.25em;
-		color: #888;
-	}
-
-	hr {
-		margin-top: 1.2em;
-		margin-bottom: 3em;
-		border: 1px solid #eee;
-	}
-
-	@media (orientation: landscape) {
-		article {
-			width: 50%;
-		}
-
-		article :global(h1) {
-			font-size: 2.4rem;
-		}
-	}
-
-	@media (orientation: portrait) {
-		article {
-			width: 100%;
-		}
-
-		article :global(h1) {
-			font-size: 2rem;
-		}
 	}
 
 	:global(.splide__slide) {

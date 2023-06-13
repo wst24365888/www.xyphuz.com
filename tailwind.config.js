@@ -2,7 +2,24 @@
 export default {
 	content: ["./index.html", "./src/**/*.{html,svelte,vue,js,ts,jsx,tsx}"],
 	theme: {
-		extend: {},
+		extend: {
+			typography: {
+				DEFAULT: {
+					css: {
+						h2: {
+							a: {
+								"font-weight": "bold",
+								color: "black",
+								"text-decoration": "none",
+								"&:hover": {
+									"text-decoration": "underline",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	},
-	plugins: [],
+	plugins: [require("@tailwindcss/typography")],
 };
