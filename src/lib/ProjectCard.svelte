@@ -3,56 +3,18 @@
 	import type { ProjectPreview } from "../models/project_preview";
 
 	export let project: ProjectPreview;
-
-	function onProjectClick() {
-		goto(project.url);
-	}
 </script>
 
-<div
-	class="project-card"
-	on:click={onProjectClick}
-	on:keypress={onProjectClick}
+<button
+	class="flex w-full cursor-pointer flex-col gap-6 border border-solid border-gray-300 px-6 py-8 text-left transition duration-500 hover:border-black"
+	on:click={() => goto(project.url)}
 	data-sveltekit-preload-data
 >
-	<a href={project.url}>
-		<h2>{project.attributes.title}</h2>
-	</a>
-	<div class="card-info">
-		<p>{project.attributes.description}</p>
-		<p>{project.attributes.dateString ?? ""}</p>
+	<h2 class=" text-2xl font-bold">{project.attributes.title}</h2>
+	<div class=" flex w-full flex-wrap justify-between">
+		<p class=" mt-4 font-light text-gray-400">{project.attributes.description}</p>
+		{#if project.attributes.dateString}
+			<p class=" mt-4 font-light text-gray-400">{project.attributes.dateString}</p>
+		{/if}
 	</div>
-</div>
-
-<style>
-	.project-card {
-		padding: 0.75em 1.5em;
-		border: 1px solid #ccc;
-		transition: 0.5s;
-	}
-
-	.project-card:hover {
-		border: 1px solid #000;
-		cursor: pointer;
-	}
-
-	.card-info {
-		display: flex;
-		justify-content: space-between;
-		flex-wrap: wrap;
-	}
-
-	h2 {
-		margin-top: 0.75em 0;
-	}
-
-	p {
-		font-weight: 300;
-		color: #666;
-	}
-
-	a {
-		text-decoration: none;
-		color: #000;
-	}
-</style>
+</button>

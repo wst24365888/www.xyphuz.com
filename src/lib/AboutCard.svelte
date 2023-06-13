@@ -3,56 +3,18 @@
 	import type { AboutPreview } from "../models/about_preview";
 
 	export let about: AboutPreview;
-
-	function onAboutClick() {
-		goto(about.url);
-	}
 </script>
 
-<div
-	class="about-card"
-	on:click={onAboutClick}
-	on:keypress={onAboutClick}
+<button
+	class="flex w-full cursor-pointer flex-col gap-6 border border-solid border-gray-300 px-6 py-8 text-left transition duration-500 hover:border-black"
+	on:click={() => goto(about.url)}
 	data-sveltekit-preload-data
 >
-	<a href={about.url}>
-		<h2>{about.attributes.title}</h2>
-	</a>
-	<div class="card-info">
-		<p>{about.attributes.description}</p>
-		<p>{about.attributes.dateString ?? ""}</p>
+	<h2 class=" text-2xl font-bold">{about.attributes.title}</h2>
+	<div class=" flex w-full flex-wrap justify-between">
+		<p class=" mt-4 font-light text-gray-400">{about.attributes.description}</p>
+		{#if about.attributes.dateString}
+			<p class=" mt-4 font-light text-gray-400">{about.attributes.dateString}</p>
+		{/if}
 	</div>
-</div>
-
-<style>
-	.about-card {
-		padding: 0.75em 1.5em;
-		border: 1px solid #ccc;
-		transition: 0.5s;
-	}
-
-	.about-card:hover {
-		border: 1px solid #000;
-		cursor: pointer;
-	}
-
-	.card-info {
-		display: flex;
-		justify-content: space-between;
-		flex-wrap: wrap;
-	}
-
-	h2 {
-		margin-top: 0.75em 0;
-	}
-
-	p {
-		font-weight: 300;
-		color: #666;
-	}
-
-	a {
-		text-decoration: none;
-		color: #000;
-	}
-</style>
+</button>
