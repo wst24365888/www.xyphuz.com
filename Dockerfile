@@ -8,9 +8,9 @@ ENV NODE_OPTIONS=--experimental-specifier-resolution=node
 RUN echo ${NODE_OPTIONS}
 
 RUN apk add --no-cache libc6-compat
-RUN npm install -g pnpm
-RUN pnpm install --frozen-lockfile
-RUN pnpm run build
+RUN npm i -g pnpm
+RUN pnpm i
+RUN pnpm build
 
 FROM node:18.8.0-alpine3.15
 
