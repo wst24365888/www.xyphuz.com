@@ -19,20 +19,6 @@ body {
 	overflow-y: overlay;
 }
 
-a:not(
-		article > h1 > a,
-		article > h2 > a,
-		article > h3 > a,
-		article > h4 > a,
-		article > h5 > a,
-		article > h6 > a
-	) {
-	margin: 0;
-	font-weight: 200;
-	color: var(--accent-color);
-	text-decoration: none;
-}
-
 article p code,
 article h2 code,
 article h3 code,
@@ -41,7 +27,6 @@ article h5 code,
 article h6 code {
 	padding: 0.2em 0.35em;
 	background-color: #efefef;
-	font-size: 1.05em;
 	overflow-wrap: break-word;
 }
 

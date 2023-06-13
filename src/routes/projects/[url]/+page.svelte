@@ -1,10 +1,9 @@
 <script lang="ts">
-	import type { PageData } from "./$types";
 	import { Splide, SplideSlide } from "@splidejs/svelte-splide";
 	import type { Options } from "@splidejs/splide";
 	import "@splidejs/svelte-splide/css";
 
-	export let data: PageData;
+	export let data;
 
 	let showCarouesel = false;
 	setTimeout(() => {
@@ -75,12 +74,12 @@
 
 	<div class="flex w-full flex-col items-center justify-center px-10 pb-8 pt-16">
 		<article class="prose w-full md:w-1/2">
-			<h1 class="mb-5 mt-1">{data.project.attributes.title}</h1>
-			<div class=" text-gray-400">{data.project.attributes.description}</div>
+			<h1 class="mb-6 mt-1">{data.project.attributes.title}</h1>
+			<div class=" mb-6 text-gray-400">{data.project.attributes.description}</div>
 			{#if data.project.attributes.dateString}
-				<div class="mt-1 text-gray-400">{data.project.attributes.dateString}</div>
+				<div>{data.project.attributes.dateString}</div>
 			{/if}
-			<hr class="mb-12 mt-5 border border-solid border-gray-100" />
+			<hr class="mb-12 border border-solid border-gray-100" />
 			{@html data.project.html}
 		</article>
 	</div>
