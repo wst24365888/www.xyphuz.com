@@ -1,5 +1,4 @@
-import pkg from "glob";
-const { glob } = pkg;
+import { glob } from "glob";
 
 export async function GET(): Promise<Response> {
 	const sitePrefix = "https://www.xyphuz.com";
@@ -26,19 +25,17 @@ export async function GET(): Promise<Response> {
 		)
 		.join("")}
 	${mdRoutes
-		.map(
-			(route) => `
-		${glob
-			.sync(`static/${route}/*.md`)
-			.map((filePath) => {
-				const url = filePath.replace("static/", "").replace(".md", "");
-				return `<url>
-					<loc>${sitePrefix}/${url}</loc>
-				</url>
-				`;
-			})
-			.join("")}
-	`,
+		.map((route) =>
+			glob
+				.sync(`static/${route}/*.md`)
+				.map((filePath) => {
+					const url = filePath.replace("static/", "").replace(".md", "");
+					return `<url>
+						<loc>${sitePrefix}/${url}</loc>
+					</url>
+					`;
+				})
+				.join(""),
 		)
 		.join("")}
 </urlset>
