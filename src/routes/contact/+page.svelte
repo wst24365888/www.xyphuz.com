@@ -16,150 +16,75 @@
 	<title>Contact - Xyphuz</title>
 </svelte:head>
 
-<section bind:clientWidth={w} bind:clientHeight={h}>
-	<div id="backgruond" />
+<section
+	class="relative m-0 flex h-full w-full items-center justify-center overflow-hidden p-0"
+	bind:clientWidth={w}
+	bind:clientHeight={h}
+>
+	<div
+		class="absolute -z-30 m-0 flex h-full w-full items-center justify-center p-0 opacity-0"
+		id="backgruond"
+	/>
 
-	<div id="backgruond-marquee-container">
-		<div id="backgruond-marquee">
+	<div
+		class="absolute -z-20 mb-[4vh] flex h-[calc(100%-5em)] w-full items-center justify-center p-0"
+	>
+		<div
+			class="m-0 flex h-full w-screen items-center justify-center whitespace-nowrap p-0 text-[12rem] font-black text-gray-100 opacity-0"
+			id="backgruond-marquee"
+		>
 			<Marquee {speed}>
 				Contact Xyphuz
-				<div id="divider" />
+				<div class="w-[5vw]" />
 			</Marquee>
 		</div>
 	</div>
 
-	<div id="info-container">
-		<div class="wrapper">
-			<p id="name" data-text="Contact">Contact</p>
-		</div>
-		<div class="wrapper">
-			<p id="description" data-text="Xyphuz">Xyphuz</p>
-		</div>
+	<div
+		class="absolute z-10 m-0 flex h-[calc(100%-5em)] w-full items-center justify-center p-0 opacity-[var(--logo-opacity)] transition-opacity duration-1000 ease-in-out"
+		id="canvas"
+	>
+		<Canvas size={{ width: w / (landscape ? 4 : 2), height: h }}>
+			<GitHub3D {zoom} />
+		</Canvas>
+		<Canvas size={{ width: w / (landscape ? 4 : 2), height: h }}>
+			<Gmail3D {zoom} />
+		</Canvas>
 	</div>
 
-	<div id="canvas-container">
-		<div id="canvas-github">
-			<Canvas size={{ width: w / (landscape ? 4 : 2), height: h }}>
-				<GitHub3D {zoom} />
-			</Canvas>
+	<div
+		class="relative left-0 top-0 m-0 flex h-full w-full flex-col items-start justify-between p-8 md:justify-end md:px-[3vw] md:py-[3vh]"
+	>
+		<div class="relative w-full">
+			<p
+				class="m-0 p-0 text-[4rem] font-black leading-tight text-gray-800 after:absolute after:left-0 after:top-0 after:text-gray-800 after:content-[attr(data-text)] md:text-[4vw]"
+				id="name"
+				data-text="Contact"
+			>
+				Contact
+			</p>
 		</div>
-		<div id="canvas-gmail">
-			<Canvas size={{ width: w / (landscape ? 4 : 2), height: h }}>
-				<Gmail3D {zoom} />
-			</Canvas>
+		<div class="relative w-full">
+			<p
+				class="m-0 w-full p-0 text-right text-[4rem] font-black leading-tight after:absolute after:left-0 after:top-0 after:w-full after:text-right after:text-white after:content-[attr(data-text)] md:text-left md:text-[4vw] after:md:text-left"
+				id="description"
+				data-text="Xyphuz"
+			>
+				Xyphuz
+			</p>
 		</div>
 	</div>
 </section>
 
 <style>
-	section {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		overflow: hidden;
-		margin: 0;
-		padding: 0;
-		width: 100%;
-		height: 100%;
-		position: relative;
-	}
-
 	#backgruond {
-		position: absolute;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		margin: 0;
-		padding: 0;
-		width: 100%;
-		height: 100%;
-		z-index: -3;
 		background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAABnSURBVHja7M5RDYAwDEXRDgmvEocnlrQS2SwUFST9uEfBGWs9c97nbGtDcquqiKhOImLs/UpuzVzWEi1atGjRokWLFi1atGjRokWLFi1atGjRokWLFi1af7Ukz8xWp8z8AAAA//8DAJ4LoEAAlL1nAAAAAElFTkSuQmCC)
 			repeat 0 0;
-		opacity: 0;
 		animation: backgruond-scrolling 10s linear infinite, fade-in 1s ease-in-out 0.5s forwards;
 	}
 
-	#backgruond-marquee-container {
-		position: absolute;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		padding: 0;
-		width: 100%;
-		height: calc(100% - 5em);
-		z-index: -2;
-		margin-bottom: 2em;
-	}
-
 	#backgruond-marquee {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		height: 100%;
-		font-weight: 900;
-		color: #eee;
-		white-space: nowrap;
-		width: 100vw;
-		margin: 0;
-		padding: 0;
-		height: 100%;
-		opacity: 0;
 		animation: fade-in 2s ease-in-out 1s forwards;
-	}
-
-	#divider {
-		width: 5vw;
-	}
-
-	#canvas-container {
-		position: absolute;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		margin: 0;
-		padding: 0;
-		width: 100vw;
-		height: calc(100% - 5em);
-		opacity: 0;
-		animation: fade-in 1s ease-in-out 2s forwards;
-		overflow-x: visible;
-	}
-
-	#canvas-github {
-		display: flex;
-		justify-content: flex-end;
-		align-items: center;
-		margin: 0;
-		padding: 0;
-		height: calc(100% - 5em);
-	}
-
-	#canvas-gmail {
-		display: flex;
-		justify-content: flex-start;
-		align-items: center;
-		margin: 0;
-		padding: 0;
-		height: calc(100% - 5em);
-	}
-
-	#info-container {
-		position: relative;
-		left: 0;
-		top: 0;
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-		margin: 0;
-		width: 100%;
-		height: 100%;
-		z-index: -1;
-	}
-
-	.wrapper {
-		position: relative;
-		width: 100%;
 	}
 
 	@keyframes backgruond-scrolling {
@@ -177,123 +102,17 @@
 		}
 	}
 
-	@media (orientation: landscape) {
-		#backgruond-marquee {
-			font-size: 14vw;
-		}
-
-		#info-container {
-			padding: 4em;
-			justify-content: flex-end;
-		}
-
-		#name {
-			font-size: 5vw;
-			font-weight: 900;
-			color: #222;
-			margin: 0;
-			padding: 0;
-			line-height: 1.25;
-			-webkit-text-stroke: 2px #fff;
-		}
-
-		#name::after {
-			content: attr(data-text);
-			color: #222;
-			position: absolute;
-			top: 0px;
-			left: 0px;
-			-webkit-text-stroke: 0px #fff;
-		}
-
-		#description {
-			font-size: 5vw;
-			font-weight: 900;
-			color: white;
-			margin: 0;
-			padding: 0;
-			line-height: 1.25;
-			-webkit-text-stroke: 2px #222;
-		}
-
-		#description::after {
-			content: attr(data-text);
-			color: white;
-			position: absolute;
-			top: 0px;
-			left: 0px;
-			-webkit-text-stroke: 0px #222;
-		}
-
-		#canvas-github {
-			width: 25vw;
-		}
-
-		#canvas-gmail {
-			width: 25vw;
-		}
+	#name {
+		-webkit-text-stroke: 2px #fff;
+	}
+	#name::after {
+		-webkit-text-stroke: 0px #fff;
 	}
 
-	@media (orientation: portrait) {
-		#backgruond-marquee {
-			font-size: 12em;
-		}
-
-		#info-container {
-			padding: 2em;
-			justify-content: space-between;
-			width: 100%;
-			box-sizing: border-box;
-		}
-
-		#name {
-			font-size: 4em;
-			font-weight: 900;
-			color: #222;
-			margin: 0;
-			padding: 0;
-			line-height: 1.25;
-			-webkit-text-stroke: 2px #fff;
-		}
-
-		#name::after {
-			content: attr(data-text);
-			color: #222;
-			position: absolute;
-			top: 0px;
-			left: 0px;
-			-webkit-text-stroke: 0px #fff;
-		}
-
-		#description {
-			font-size: 4em;
-			font-weight: 900;
-			color: white;
-			margin: 0;
-			padding: 0;
-			line-height: 1.25;
-			-webkit-text-stroke: 2px #222;
-			width: 100%;
-			text-align: right;
-		}
-
-		#description::after {
-			content: attr(data-text);
-			color: white;
-			position: absolute;
-			top: 0px;
-			left: 0px;
-			-webkit-text-stroke: 0px #222;
-			width: 100%;
-			text-align: right;
-		}
-
-		#canvas-github {
-			width: 50vw;
-		}
-
-		#canvas-gmail {
-			width: 50vw;
-		}
+	#description {
+		-webkit-text-stroke: 2px #222;
+	}
+	#description::after {
+		-webkit-text-stroke: 0px #222;
 	}
 </style>

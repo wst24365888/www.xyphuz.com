@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { T, useFrame } from "@threlte/core";
-	import { useGltf, interactivity } from "@threlte/extras";
+	import { useGltf, interactivity, useCursor } from "@threlte/extras";
 	import * as THREE from "three";
 	import { tweened } from "svelte/motion";
 	import { quintOut } from "svelte/easing";
+
+	const { hovering } = useCursor();
 
 	interactivity();
 
@@ -60,12 +62,18 @@
 		castShadow
 		receiveShadow
 		is={$gltf.nodes["Scene"]}
-		on:pointerenter={debounce(() => {
-			scale.set(1.25);
-		}, 100)}
-		on:pointerleave={debounce(() => {
-			scale.set(1);
-		}, 100)}
+		on:pointerenter={() => {
+			$hovering = true;
+			debounce(() => {
+				scale.set(1.25);
+			}, 100)();
+		}}
+		on:pointerleave={() => {
+			$hovering = false;
+			debounce(() => {
+				scale.set(1);
+			}, 100)();
+		}}
 		on:click={() => window.open("mailto:xyphuzu@gmail.com", "_blank")}
 		rotation={[Math.PI / 2, 0, 0]}
 		scale={[$scale, $scale, $scale]}

@@ -61,7 +61,7 @@
 	<div class="flex w-full flex-col items-center justify-center px-10 pb-8 pt-16">
 		<article class="prose w-full md:w-1/2">
 			<h1 class="mb-6 mt-1">{data.about.attributes.title}</h1>
-			<div class=" mb-6 text-gray-400">{data.about.attributes.description}</div>
+			<div class="mb-6 text-gray-400">{data.about.attributes.description}</div>
 			{#if data.about.attributes.dateString}
 				<div>{data.about.attributes.dateString}</div>
 			{/if}

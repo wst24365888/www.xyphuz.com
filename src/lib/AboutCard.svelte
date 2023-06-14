@@ -10,11 +10,11 @@
 	on:click={() => goto(about.url)}
 	data-sveltekit-preload-data
 >
-	<h2 class=" text-2xl font-bold">{about.attributes.title}</h2>
-	<div class=" flex w-full flex-wrap justify-between">
-		<p class=" mt-4 font-light text-gray-400">{about.attributes.description}</p>
+	<h2 class="text-2xl font-bold">{about.attributes.title}</h2>
+	<div class="flex w-full flex-wrap justify-between">
+		<p class="mt-4 font-light text-gray-400">{about.attributes.description}</p>
 		{#if about.attributes.dateString}
-			<p class=" mt-4 font-light text-gray-400">{about.attributes.dateString}</p>
+			<p class="mt-4 font-light text-gray-400">{about.attributes.dateString}</p>
 		{/if}
 	</div>
 </button>
