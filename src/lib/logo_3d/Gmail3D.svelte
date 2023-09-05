@@ -81,8 +81,8 @@
 	/>
 {/if}
 
-<T.DirectionalLight castShadow position={[0, 100, 10]} intensity={1} />
-<T.DirectionalLight castShadow position={[10, 100, 0]} intensity={1} />
-<T.DirectionalLight castShadow position={[0, 100, -10]} intensity={1} />
-<T.DirectionalLight castShadow position={[-10, 100, 0]} intensity={1} />
-<T.AmbientLight intensity={0.75} />
+<T.DirectionalLight castShadow position={[0, 100, 10]} intensity={2} />
+<T.DirectionalLight castShadow position={[10, 100, 0]} intensity={2} />
+<T.DirectionalLight castShadow position={[0, 100, -10]} intensity={2} />
+<T.DirectionalLight castShadow position={[-10, 100, 0]} intensity={2} />
+<T.AmbientLight intensity={2} />
