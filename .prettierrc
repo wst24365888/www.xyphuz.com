@@ -3,6 +3,13 @@
 	"singleQuote": false,
 	"trailingComma": "all",
 	"printWidth": 100,
-	"pluginSearchDirs": ["."],
-	"overrides": [{ "files": "*.svelte", "options": { "parser": "svelte" } }]
+	"overrides": [
+		{
+			"files": "*.svelte",
+			"options": {
+				"parser": "svelte"
+			}
+		}
+	],
+	"plugins": ["prettier-plugin-svelte"]
 }
