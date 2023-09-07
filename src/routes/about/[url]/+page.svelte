@@ -31,6 +31,21 @@
 		pauseOnHover: false,
 		pauseOnFocus: false,
 	} as Options;
+
+	$: computedPhotoUrls = (() => {
+		if (data.about.attributes.photoUrls == null) {
+			return null;
+		}
+
+		let photoUrls = data.about.attributes.photoUrls;
+
+		const perPage = 8;
+		while (photoUrls.length < perPage) {
+			photoUrls = photoUrls.concat(photoUrls);
+		}
+
+		return photoUrls;
+	})();
 </script>
 
 <svelte:head>
@@ -46,9 +61,10 @@
 	class="flex flex-col items-center justify-center"
 	style="--carousel-opacity: {carouselOpacity}"
 >
-	{#if showCarouesel && data.about.attributes.photoUrls != null}
+{#if computedPhotoUrls != null}
+	{#if showCarouesel}
 		<Splide options={splideOptions}>
-			{#each data.about.attributes.photoUrls as photoUrl}
+			{#each computedPhotoUrls as photoUrl}
 				<SplideSlide>
 					<img src={photoUrl} loading="lazy" alt={photoUrl} style="height: 25em" />
 				</SplideSlide>
@@ -57,6 +73,7 @@
 	{:else}
 		<div style="height: 25em" />
 	{/if}
+{/if}
 
 	<div class="flex w-full flex-col items-center justify-center px-10 pb-8 pt-16">
 		<article class="prose w-full md:w-1/2">

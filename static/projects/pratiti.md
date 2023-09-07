@@ -21,7 +21,7 @@ photoUrls:
     "pratiti/16.webp",
     "pratiti/PratitiBrands.webp",
   ]
-index: 7
+index: 30
 ---
 
 A 2D horizontal scrolling simulation game with fighting games. Players will take on the role of the protagonist Edwin and lead his Pratiti to grow up together, and together to defeat enemies and explore unknown territories. This game has a unique raisng and breeding system, a complex and varied battle strategy, and a wide variety of different types of Pratiti waiting for players to play!
@@ -32,7 +32,7 @@ This game is developed by me and 11 partners from different department of NCU (N
 
 - C#, Unity
 
-## Functionalities
+## Features
 
 - Explore the unknown territory and take care of Paratiti who is fighting together!
 - During the trip, you will encounter a variety of different species of Paratiti, you can catch them and try to use new partners to defeat the enemy!

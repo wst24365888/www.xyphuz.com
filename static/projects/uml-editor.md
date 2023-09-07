@@ -9,7 +9,7 @@ photoUrls:
     "uml-editor/3.webp",
     "uml-editor/4.webp",
   ]
-index: 9
+index: 70
 ---
 
 A tool for drawing UML Diagram. This tool was developed during an Object-Oriented Programming and Design course, and I often use it to verify my own ideas about code architecture. I used Java to develop it, and this time I was challenged to use the Awt and Swing packages with no graphical preview interface compared to JavaFX, which I used in last couple of projects.
@@ -18,7 +18,7 @@ A tool for drawing UML Diagram. This tool was developed during an Object-Oriente
 
 - Java/Awt/Swing
 
-## Functionalities
+## Features
 
 - Draw UML objects: Class and Use Case.
 - Drag and drop objects as you like.

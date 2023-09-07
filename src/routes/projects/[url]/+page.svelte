@@ -60,16 +60,18 @@
 	class="flex flex-col items-center justify-center"
 	style="--carousel-opacity: {carouselOpacity}"
 >
-	{#if showCarouesel && computedPhotoUrls != null}
-		<Splide options={splideOptions}>
-			{#each computedPhotoUrls as photoUrl}
-				<SplideSlide>
-					<img src={photoUrl} loading="lazy" alt={photoUrl} style="height: 25em" />
-				</SplideSlide>
-			{/each}
-		</Splide>
-	{:else}
-		<div style="height: 25em" />
+	{#if computedPhotoUrls != null}
+		{#if showCarouesel}
+			<Splide options={splideOptions}>
+				{#each computedPhotoUrls as photoUrl}
+					<SplideSlide>
+						<img src={photoUrl} loading="lazy" alt={photoUrl} style="height: 25em" />
+					</SplideSlide>
+				{/each}
+			</Splide>
+		{:else}
+			<div style="height: 25em" />
+		{/if}
 	{/if}
 
 	<div class="flex w-full flex-col items-center justify-center px-10 pb-8 pt-16">

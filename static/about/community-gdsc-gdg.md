@@ -10,7 +10,7 @@ photoUrls:
     "community-gdsc-gdg/dsc_ncu_3_marked.webp",
     "community-gdsc-gdg/gdg_marked.webp",
   ]
-index: 2
+index: 3
 ---
 
 Google Developer Student Clubs (GDSC) is a Google Developers-supported student developer community program where students from universities and colleges learn and discuss Google-initiated development technologies such as Android, Cloud, Web, and AI/ML on campus.

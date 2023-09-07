@@ -10,7 +10,7 @@ photoUrls:
     "todo-app/4.webp",
     "todo-app/5.webp",
   ]
-index: 8
+index: 10
 ---
 
 Todo App for practicing basic skills of Flutter and implementing UI/UX, which I also used in Google Developer Student Club @ NCU as a course material.
@@ -19,7 +19,7 @@ Todo App for practicing basic skills of Flutter and implementing UI/UX, which I 
 
 - Dart/Flutter
 
-## Functionalities
+## Features
 
 - Add to-do task, set titles, labels, and deadlines.
 - Tap to complete the task.

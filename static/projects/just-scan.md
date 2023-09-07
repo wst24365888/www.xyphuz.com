@@ -13,7 +13,7 @@ photoUrls:
     "just-scan/7.webp",
     "just-scan/8.webp",
   ]
-index: 5
+index: 20
 ---
 
 An app for Scan QR Code and Barcode, also can create QR Code, view the history, or upload files to analyze the QR Code or text (OCR). The development of this App has made my Flutter and UI/UX skills become more profound, and I have studied a lot of the part of global state management, and it is also my third product on Google Play.
@@ -22,7 +22,7 @@ An app for Scan QR Code and Barcode, also can create QR Code, view the history, 
 
 - Dart/Flutter
 
-## Functionalities
+## Features
 
 - Scan Barcode: real-time barcode scanning, and save the barcode to the history.
 - Upload File: analyze the barcode or text in the file (text only supports Latin family).

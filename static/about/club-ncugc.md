@@ -9,7 +9,7 @@ photoUrls:
     "club-ncugc/gc_sitcon_marked.webp",
     "club-ncugc/gc_talk_marked.webp",
   ]
-index: 3
+index: 4
 ---
 
 NCUGC (National Central University Game Creator) is a game creation and exchange club created by National Central University students.

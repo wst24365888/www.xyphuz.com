@@ -9,18 +9,20 @@ photoUrls:
     "badfood/screenshot-3.webp", 
     "badfood/screenshot-4.webp", 
   ]
-index: 1
+index: 30
+link: https://github.com/wst24365888/badfood
 ---
 
 Cooperate with Chang Jung Christian University's Department of Food Hygiene and Safety and biotechnology company GeneMessenger to create a system that can report problems after eating something. The development uses Flutter as the front-end, to make a dual-platform App and a Single Page Web App, Laravel as the back-end (mainly develop by my partner, I help develop two API of the RESTful API), and connects to Firebase, and various Google services (Google OAuth, Map API, Place API).
 
 ## Tech Stack
+
 - Dart/Flutter
 - Laravel
 - Firebase
 - Various Google API
 
-## Functionalities
+## Features
 
 - Report bad food, directly connected to the Google Map API so that users can accurately report the store.
 - View the reported stores in each region, or directly use Google Map to view the nearby store notification records.

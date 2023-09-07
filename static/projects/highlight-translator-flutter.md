@@ -7,7 +7,8 @@ photoUrls:
     "highlight-translator-flutter/1.webp",
     "highlight-translator-flutter/2.webp",
   ]
-index: 4
+index: 90
+link: https://github.com/wst24365888/highlight_translator_flutter
 ---
 
 A useful tool for translation! It will float on top of all windows and will translate any text into Chinese as long as it is highlighted in any window. Made with Flutter Desktop, Win32 C++ API, Python, for Windows 10 or above.
@@ -18,6 +19,6 @@ A useful tool for translation! It will float on top of all windows and will tran
 - Win32 C++ API
 - Python
 
-## Functionalities
+## Features
 
 - Highlight any text in any window, it will flip it into Chinese.
