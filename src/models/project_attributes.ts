@@ -4,4 +4,5 @@ export interface ProjectAttributes {
 	dateString: string;
 	photoUrls?: string[];
 	index: number;
+	link?: string;
 }

@@ -78,10 +78,20 @@
 		<article class="prose w-full md:w-1/2">
 			<h1 class="mb-6 mt-1">{data.project.attributes.title}</h1>
 			<div class="mb-6 text-gray-400">{data.project.attributes.description}</div>
-			{#if data.project.attributes.dateString}
-				<div>{data.project.attributes.dateString}</div>
-			{/if}
-			<hr class="mb-12 border border-solid border-gray-100" />
+			<div class="mb-6">
+				{#if data.project.attributes.dateString}
+					{data.project.attributes.dateString}
+				{/if}
+				{#if data.project.attributes.dateString && data.project.attributes.link}
+					&middot;
+				{/if}
+				{#if data.project.attributes.link}			
+					<a href="{data.project.attributes.link}" target="_blank">
+						{data.project.attributes.link}
+					</a>
+				{/if}
+			</div>
+			<hr class="border border-solid border-gray-100" />
 			{@html data.project.html}
 		</article>
 	</div>
