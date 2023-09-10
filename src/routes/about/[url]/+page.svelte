@@ -28,7 +28,7 @@
 		autoplay: true,
 		interval: 3000,
 		speed: 1000,
-		lazyLoad: "nearby",
+		lazyLoad: false,
 		pauseOnHover: false,
 		pauseOnFocus: false,
 	} as Options;
@@ -52,6 +52,8 @@
 
 <svelte:head>
 	<title>About - {data.about.attributes.title}</title>
+	<link rel="preconnect" href="https://www.xyphuz.com" />
+	<link rel="dns-prefetch" href="https://www.xyphuz.com" />
 	{#if data.about.attributes.photoUrls != null}
 		{#each data.about.attributes.photoUrls as photoUrl}
 			<link rel="preload" as="image" href={photoUrl} />

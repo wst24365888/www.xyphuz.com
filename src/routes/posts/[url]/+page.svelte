@@ -6,6 +6,7 @@
 	<title>Post - {data.post.attributes.title}</title>
 
 	<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin="anonymous" />
+	<link rel="dns-prefetch" href="https://cdnjs.cloudflare.com" crossorigin="anonymous" />
 	<link
 		rel="preload"
 		as="style"
