@@ -90,7 +90,7 @@
 					&middot;
 				{/if}
 				{#if data.project.attributes.link}
-					<a href={data.project.attributes.link} target="_blank">
+					<a href={data.project.attributes.link} target="_blank" class="break-words">
 						{data.project.attributes.link}
 					</a>
 				{/if}
