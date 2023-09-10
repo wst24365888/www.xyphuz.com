@@ -20,6 +20,10 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Create .env.production
+        run: |
+          touch .env.production
+          echo VITE_ASSETS_PREFIX=${{ secrets.VITE_ASSETS_PREFIX }} >> .env.production
       - name: Build and push
         uses: docker/build-push-action@v4
         with:
