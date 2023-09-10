@@ -28,24 +28,25 @@
 		autoplay: true,
 		interval: 3000,
 		speed: 1000,
-		lazyLoad: false,
+		lazyLoad: "nearby",
 		pauseOnHover: false,
 		pauseOnFocus: false,
 	} as Options;
 
-	$: computedPhotoUrls = (() => {
+	const computedPhotoUrls = (() => {
 		if (data.about.attributes.photoUrls == null) {
 			return null;
 		}
 
+		let result: string[] = [];
 		let photoUrls = data.about.attributes.photoUrls;
 
 		const perPage = 8;
-		while (photoUrls.length < perPage) {
-			photoUrls = photoUrls.concat(photoUrls);
+		while (result.length < perPage) {
+			result = result.concat(photoUrls);
 		}
 
-		return photoUrls;
+		return result;
 	})();
 </script>
 
@@ -67,7 +68,7 @@
 			<Splide options={splideOptions}>
 				{#each computedPhotoUrls as photoUrl}
 					<SplideSlide>
-						<img src={photoUrl} loading="lazy" alt={photoUrl} style="height: 25em" />
+						<img src={photoUrl} alt={photoUrl} style="height: 25em" />
 					</SplideSlide>
 				{/each}
 			</Splide>
