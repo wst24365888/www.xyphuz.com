@@ -3,7 +3,10 @@ import { importMDs } from "$lib/server/import_mds";
 import type { AboutPreview } from "../../../models/about_preview";
 
 export async function GET(): Promise<Response> {
-	const aboutFiles = importMDs("static/about/**/*.md", convertMarkdownToAbout);
+	const aboutFiles = importMDs(
+		`${import.meta.env.VITE_ASSETS_PREFIX}/about/**/*.md`,
+		convertMarkdownToAbout,
+	);
 
 	const posts: AboutPreview[] = aboutFiles.map((file) => {
 		return {

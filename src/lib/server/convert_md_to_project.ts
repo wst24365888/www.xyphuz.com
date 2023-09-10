@@ -38,7 +38,7 @@ export function convertMarkdownToProject(path: string): Project {
 
 	return {
 		attributes,
-		url: path.replace("static", "").replace(".md", ""),
+		url: path.replace(import.meta.env.VITE_ASSETS_PREFIX, "").replace(".md", ""),
 		html: result,
 	};
 }

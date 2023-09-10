@@ -27,9 +27,9 @@ export async function GET(): Promise<Response> {
 	${mdRoutes
 		.map((route) =>
 			glob
-				.sync(`static/${route}/*.md`)
+				.sync(`${import.meta.env.VITE_ASSETS_PREFIX}/${route}/*.md`)
 				.map((filePath) => {
-					const url = filePath.replace("static/", "").replace(".md", "");
+					const url = filePath.replace(import.meta.env.VITE_ASSETS_PREFIX, "").replace(".md", "");
 					return `<url>
 						<loc>${sitePrefix}/${url}</loc>
 					</url>

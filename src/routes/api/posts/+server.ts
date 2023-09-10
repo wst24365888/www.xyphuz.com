@@ -3,7 +3,10 @@ import { importMDs } from "$lib/server/import_mds";
 import type { PostPreview } from "../../../models/post_preview";
 
 export async function GET(): Promise<Response> {
-	const postFiles = importMDs("static/posts/**/*.md", convertMarkdownToPost);
+	const postFiles = importMDs(
+		`${import.meta.env.VITE_ASSETS_PREFIX}/posts/**/*.md`,
+		convertMarkdownToPost,
+	);
 
 	const posts: PostPreview[] = postFiles.map((file) => {
 		return {
