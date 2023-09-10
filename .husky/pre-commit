@@ -1,4 +1,6 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+# https://github.com/oven-sh/bun/issues/3154
+# will fully migrate to bun once it's fixed
 pnpm lint-staged
