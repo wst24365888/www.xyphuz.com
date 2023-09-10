@@ -22,11 +22,12 @@
 		width: carouselWidth,
 		height: "25em",
 		autoWidth: true,
+		autoHeight: true,
 		focus: "center",
 		autoplay: true,
 		interval: 3000,
 		speed: 1000,
-		lazyLoad: true,
+		lazyLoad: false,
 		pauseOnHover: false,
 		pauseOnFocus: false,
 	} as Options;
@@ -85,8 +86,8 @@
 				{#if data.project.attributes.dateString && data.project.attributes.link}
 					&middot;
 				{/if}
-				{#if data.project.attributes.link}			
-					<a href="{data.project.attributes.link}" target="_blank">
+				{#if data.project.attributes.link}
+					<a href={data.project.attributes.link} target="_blank">
 						{data.project.attributes.link}
 					</a>
 				{/if}
