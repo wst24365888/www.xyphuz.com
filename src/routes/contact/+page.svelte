@@ -4,12 +4,12 @@
 	import GitHub3D from "$lib/logo_3d/GitHub3D.svelte";
 	import Gmail3D from "$lib/logo_3d/Gmail3D.svelte";
 
-	let w: number;
-	let h: number;
+	let w: number = $state(0);
+	let h: number = $state(0);
 
-	$: landscape = w > h;
-	$: zoom = landscape ? w / 15 : w / 6;
-	$: speed = w / 384 + 5;
+	let landscape = $derived(w > h);
+	let zoom = $derived(landscape ? w / 15 : w / 6);
+	let speed = $derived(w / 384 + 5);
 </script>
 
 <svelte:head>
@@ -24,7 +24,7 @@
 	<div
 		class="absolute -z-30 m-0 flex h-full w-full items-center justify-center p-0 opacity-0"
 		id="backgruond"
-	/>
+	></div>
 
 	<div
 		class="absolute -z-20 mb-[4vh] flex h-[calc(100%-5em)] w-full items-center justify-center p-0"
@@ -35,7 +35,7 @@
 		>
 			<Marquee {speed}>
 				Contact Xyphuz
-				<div class="w-[5vw]" />
+				<div class="w-[5vw]"></div>
 			</Marquee>
 		</div>
 	</div>
@@ -44,12 +44,19 @@
 		class="absolute z-10 m-0 flex h-[calc(100%-5em)] w-full items-center justify-center p-0 opacity-[var(--logo-opacity)] transition-opacity duration-1000 ease-in-out"
 		id="canvas"
 	>
-		<Canvas size={{ width: w / (landscape ? 4 : 2), height: h }}>
+		<!-- <Canvas size={{ width: w / (landscape ? 4 : 2), height: h }}>
 			<GitHub3D {zoom} />
-		</Canvas>
-		<Canvas size={{ width: w / (landscape ? 4 : 2), height: h }}>
-			<Gmail3D {zoom} />
-		</Canvas>
+		</Canvas> -->
+		<div style={"width: " + w / (landscape ? 4 : 2) + "px; height: " + h + "px"}>
+			<Canvas>
+				<GitHub3D {zoom} />
+			</Canvas>
+		</div>
+		<div style={"width: " + w / (landscape ? 4 : 2) + "px; height: " + h + "px"}>
+			<Canvas>
+				<Gmail3D {zoom} />
+			</Canvas>
+		</div>
 	</div>
 
 	<div

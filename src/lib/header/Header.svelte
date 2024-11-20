@@ -3,14 +3,18 @@
 	import { onMount } from "svelte";
 	import logo from "./logo.svg";
 
-	export let landscape = true;
-	let mounted = false;
+	interface Props {
+		landscape?: boolean;
+	}
+
+	let { landscape = true }: Props = $props();
+	let mounted = $state(false);
 
 	onMount(() => {
 		mounted = true;
 	});
 
-	let expandMenu = false;
+	let expandMenu = $state(false);
 	function toggleMenu() {
 		expandMenu = !expandMenu;
 	}
@@ -47,7 +51,7 @@
 
 	<div class="corner">
 		{#if mounted && !landscape}
-			<button id="menu-icon" on:click={toggleMenu}>
+			<button id="menu-icon" onclick={toggleMenu} aria-label="toggleMenu">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					x="0px"
@@ -64,11 +68,11 @@
 			{#if expandMenu}
 				<div id="menu-container">
 					<div id="menu">
-						<a href="/" on:click={toggleMenu} data-sveltekit-preload-data>Home</a>
-						<a href="/about" on:click={toggleMenu} data-sveltekit-preload-data>About</a>
-						<a href="/projects" on:click={toggleMenu} data-sveltekit-preload-data>Projects</a>
-						<a href="/blog" on:click={toggleMenu} data-sveltekit-preload-data>Blog</a>
-						<a href="/contact" on:click={toggleMenu} data-sveltekit-preload-data>Contact</a>
+						<a href="/" onclick={toggleMenu} data-sveltekit-preload-data>Home</a>
+						<a href="/about" onclick={toggleMenu} data-sveltekit-preload-data>About</a>
+						<a href="/projects" onclick={toggleMenu} data-sveltekit-preload-data>Projects</a>
+						<a href="/blog" onclick={toggleMenu} data-sveltekit-preload-data>Blog</a>
+						<a href="/contact" onclick={toggleMenu} data-sveltekit-preload-data>Contact</a>
 					</div>
 				</div>
 			{/if}

@@ -2,12 +2,16 @@
 	import { goto } from "$app/navigation";
 	import type { ProjectPreview } from "../models/project_preview";
 
-	export let project: ProjectPreview;
+	interface Props {
+		project: ProjectPreview;
+	}
+
+	let { project }: Props = $props();
 </script>
 
 <button
 	class="flex w-full cursor-pointer flex-col gap-6 border border-solid border-gray-300 px-6 py-8 text-left transition duration-500 hover:border-black"
-	on:click={() => goto(project.url)}
+	onclick={() => goto(project.url)}
 	data-sveltekit-preload-data
 >
 	<h2 class="text-2xl font-bold">{project.attributes.title}</h2>

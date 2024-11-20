@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { T, useFrame } from "@threlte/core";
+	import { T, useTask } from "@threlte/core";
 	import { useGltf, interactivity, useCursor } from "@threlte/extras";
 	import * as THREE from "three";
 	import { tweened } from "svelte/motion";
@@ -9,14 +9,18 @@
 
 	interactivity();
 
-	export let zoom: number;
-	let rotation = 0;
-	let model: THREE.Object3D | undefined;
+	interface Props {
+		zoom: number;
+	}
 
-	let started = false;
+	let { zoom }: Props = $props();
+	let rotation = 0;
+	let model: THREE.Object3D | undefined = $state();
+
+	let started = $state(false);
 
 	let smoothDelta = 0;
-	useFrame((_, delta) => {
+	useTask((delta) => {
 		if (!started || 1 / delta < 1 || !model) {
 			return;
 		}
@@ -44,15 +48,15 @@
 		};
 	}
 
-	const gltf = useGltf("/logo_3d/gmail_3d.gltf", {
-		useDraco: true,
-	});
+	const gltf = useGltf("/logo_3d/gmail_3d.gltf");
 
-	$: if ($gltf) {
-		setTimeout(() => {
-			started = true;
-		}, 3000);
-	}
+	$effect.pre(() => {
+		if ($gltf) {
+			setTimeout(() => {
+				started = true;
+			}, 3000);
+		}
+	});
 </script>
 
 <T.OrthographicCamera position={[0, 0, 100]} {zoom} />
@@ -62,19 +66,19 @@
 		castShadow
 		receiveShadow
 		is={$gltf.nodes["Scene"]}
-		on:pointerenter={() => {
+		onpointerenter={() => {
 			$hovering = true;
 			debounce(() => {
 				scale.set(1.25);
 			}, 100)();
 		}}
-		on:pointerleave={() => {
+		onpointerleave={() => {
 			$hovering = false;
 			debounce(() => {
 				scale.set(1);
 			}, 100)();
 		}}
-		on:click={() => window.open("mailto:xyphuzu@gmail.com", "_blank")}
+		onclick={() => window.open("mailto:xyphuzu@gmail.com", "_blank")}
 		rotation={[Math.PI / 2, 0, 0]}
 		scale={[$scale, $scale, $scale]}
 		bind:ref={model}

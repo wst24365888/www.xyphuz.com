@@ -1,7 +1,11 @@
 <script lang="ts">
 	import AboutCard from "$lib/AboutCard.svelte";
 
-	export let data;
+	interface Props {
+		data: any;
+	}
+
+	let { data }: Props = $props();
 </script>
 
 <svelte:head>

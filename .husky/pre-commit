@@ -3,4 +3,4 @@
 
 # https://github.com/oven-sh/bun/issues/3154
 # will fully migrate to bun once it's fixed
-pnpm lint-staged
+bun lint-staged

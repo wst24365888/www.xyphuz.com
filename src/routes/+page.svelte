@@ -3,13 +3,13 @@
 	import { Canvas } from "@threlte/core";
 	import Logo3D from "$lib/logo_3d/Logo3D.svelte";
 
-	let w: number;
-	let h: number;
+	let w: number = $state(0);
+	let h: number = $state(0);
 
-	$: zoom = Math.min(w, h) / 5;
-	$: speed = w / 384 + 5;
+	let zoom = $derived(Math.min(w, h) / 5);
+	let speed = $derived(w / 384 + 5);
 
-	let logoOpacity = 0;
+	let logoOpacity = $state(0);
 
 	function onGltfLoadedCallback() {
 		setTimeout(() => {
@@ -32,7 +32,7 @@
 	<div
 		class="absolute -z-30 m-0 flex h-full w-full items-center justify-center p-0 opacity-0"
 		id="backgruond"
-	/>
+	></div>
 
 	<div
 		class="absolute -z-20 flex h-[calc(100%-5em)] w-full items-center justify-center p-0 md:mb-[34vh]"
@@ -43,7 +43,7 @@
 		>
 			<Marquee {speed}>
 				Official Website - Xyphuz
-				<div class="w-[5vw]" />
+				<div class="w-[5vw]"></div>
 			</Marquee>
 		</div>
 	</div>
@@ -52,7 +52,7 @@
 		class="absolute -z-10 m-0 flex h-[calc(100%-5em)] w-full items-center justify-center p-0 opacity-[var(--logo-opacity)] transition-opacity duration-1000 ease-in-out md:left-1/2 md:w-1/2"
 		id="canvas"
 	>
-		<Canvas size={{ width: w, height: h }}>
+		<Canvas>
 			<Logo3D {zoom} {onGltfLoadedCallback} />
 		</Canvas>
 	</div>

@@ -2,10 +2,12 @@
 	import Header from "$lib/header/Header.svelte";
 	import "../index.css";
 
-	let w: number;
-	let h: number;
+	let { children } = $props();
 
-	$: landscape = w > h;
+	let w: number = $state(0);
+	let h: number = $state(0);
+
+	let landscape: boolean = $derived(w > h);
 </script>
 
 <div class="fixed left-0 right-0 top-0 z-10">
@@ -13,10 +15,10 @@
 </div>
 
 <main class="mt-20 h-[calc(100vh-5rem)]" bind:clientWidth={w} bind:clientHeight={h}>
-	<slot />
+	{@render children?.()}
 </main>
 
-<footer />
+<footer></footer>
 
 <style>
 	:global(body::-webkit-scrollbar) {

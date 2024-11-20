@@ -3,21 +3,25 @@
 	import type { Options } from "@splidejs/splide";
 	import "@splidejs/svelte-splide/css";
 
-	export let data;
+	interface Props {
+		data: any;
+	}
 
-	let showCarouesel = false;
+	let { data }: Props = $props();
+
+	let showCarouesel = $state(false);
 	setTimeout(() => {
 		showCarouesel = true;
 	}, 800);
 
-	let carouselWidth = "0px";
-	let carouselOpacity = 0;
+	let carouselWidth = $state("0px");
+	let carouselOpacity = $state(0);
 	setTimeout(() => {
 		carouselOpacity = 1;
 		carouselWidth = "100%";
 	}, 1200);
 
-	$: splideOptions = {
+	let splideOptions = $derived({
 		type: "loop",
 		width: carouselWidth,
 		height: "25em",
@@ -30,7 +34,7 @@
 		lazyLoad: false,
 		pauseOnHover: false,
 		pauseOnFocus: false,
-	} as Options;
+	} as Options);
 
 	const computedPhotoUrls = (() => {
 		if (data.project.attributes.photoUrls == null) {
@@ -74,7 +78,7 @@
 				{/each}
 			</Splide>
 		{:else}
-			<div style="height: 25em" />
+			<div style="height: 25em"></div>
 		{/if}
 	{/if}
 

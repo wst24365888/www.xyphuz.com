@@ -1,16 +1,15 @@
 <script lang="ts">
-	import { T, useFrame } from "@threlte/core";
+	import { T, useTask } from "@threlte/core";
 	import { useGltf } from "@threlte/extras";
 	import * as THREE from "three";
 
-	export let zoom: number;
 	let rotation = 0;
-	let model: THREE.Object3D | undefined;
+	let model: THREE.Object3D | undefined = $state();
 
-	let started = false;
+	let started = $state(false);
 
 	let smoothDelta = 0;
-	useFrame((_, delta) => {
+	useTask((delta) => {
 		if (!started || 1 / delta < 1 || !model) {
 			return;
 		}
@@ -20,18 +19,23 @@
 		);
 	});
 
-	const gltf = useGltf("/logo_3d/logo_3d.gltf", {
-		useDraco: true,
-	});
+	const gltf = useGltf("/logo_3d/logo_3d.gltf");
 
-	export let onGltfLoadedCallback: () => void;
-	$: if ($gltf) {
-		onGltfLoadedCallback();
-
-		setTimeout(() => {
-			started = true;
-		}, 3000);
+	interface Props {
+		zoom: number;
+		onGltfLoadedCallback: () => void;
 	}
+
+	let { zoom, onGltfLoadedCallback }: Props = $props();
+	$effect.pre(() => {
+		if ($gltf) {
+			onGltfLoadedCallback();
+
+			setTimeout(() => {
+				started = true;
+			}, 3000);
+		}
+	});
 </script>
 
 <T.OrthographicCamera makeDefault position={[0, 0, 100]} {zoom} />

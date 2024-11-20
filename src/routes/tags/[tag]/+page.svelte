@@ -1,7 +1,11 @@
 <script lang="ts">
 	import PostCard from "$lib/PostCard.svelte";
 
-	export let data;
+	interface Props {
+		data: any;
+	}
+
+	let { data }: Props = $props();
 </script>
 
 <svelte:head>
