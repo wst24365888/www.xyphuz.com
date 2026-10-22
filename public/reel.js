@@ -150,16 +150,17 @@
 
   function prepGrid() {
     const snippets = [
-      'const scene = timeline.at(t);', 'for (const layer of scene.layers) layer.draw(ctx);', 'return ship(build(test(code)));',
-      'await db.tx(async (q) => q.insert(users, row));', 'type Result<T> = { ok: true; value: T } | { ok: false; error: E };',
-      'const ease = cubicBezier(.16, 1, .3, 1);', 'if (!cache.has(key)) cache.set(key, await fetch(url));',
-      'queue.publish("orders.created", { id, total });', 'fn main() -> Result<(), Box<dyn Error>> {', 'impl Render for Scene { fn draw(&self) {} }',
-      'go func() { for msg := range ch { handle(msg) } }()', 'SELECT id, name FROM users WHERE active = true;',
-      'kubectl rollout status deploy/api --timeout=60s', 'useEffect(() => spring.start({ y: 0 }), [open]);',
-      'const p99 = histogram.quantile(0.99);', 'git commit -m "feat: make it feel alive"', 'while (alive) { learn(); build(); ship(); }',
-      'export const router = new Router({ routes, prefetch: true });', 'let v = lerp(a, b, spring(t, 260, 20));',
+      'lot := dispatcher.Next(ctx, tool.ID)', 'if err != nil { return fmt.Errorf("dispatch: %w", err) }',
+      'await bus.publish("lot.moved", { lotId, from, to, ts });', 'SELECT tool_id, state FROM equipment WHERE bay = $1 FOR UPDATE;',
+      'resource "aws_eks_cluster" "core" { version = "1.31" }', 'kubectl rollout status deploy/mes-api --timeout=120s',
+      'func (s *Scheduler) Plan(ctx context.Context, w []Wafer) (Plan, error) {', 'retry.WithBackoff(ctx, 5, 200*time.Millisecond, call)',
+      'spc.check(chart, sample).filter(Rule::WesternElectric)', 'outbox.enqueue(tx, event); tx.commit();',
+      'replicas: 3  maxSurge: 25%  maxUnavailable: 0', 'circuitBreaker.wrap(() -> recipeService.load(toolId))',
+      'p99 := hist.Quantile(0.99)', 'idempotencyKey = sha256(lotId + step + seq)', 'helm upgrade --install mes ./charts/mes -f prod.yaml',
+      'consumer.subscribe("equipment.events", groupId = "dispatch")', 'while (alive) { observe(); harden(); ship(); }',
+      'terraform plan -out=tfplan && terraform apply tfplan', 'CREATE INDEX CONCURRENTLY idx_lot_step ON lot_history(lot_id, step);',
     ];
-    let s = 'export function render(t: number) {  const scene = timeline.at(t);  ';
+    let s = 'func (d *Dispatcher) Next(ctx context.Context, tool ToolID) (*Lot, error) {  ';
     for (let i = 0; s.length < COLS * ROWS + 50; i++) s += snippets[Math.floor(hash(i, 90) * snippets.length)] + '  ';
 
     const oc = document.createElement('canvas'); oc.width = W; oc.height = H;
@@ -208,7 +209,7 @@
   /* ================================================================
    * 00 — SIGNATURE: the pen writes the mark, camera riding the nib
    * ================================================================ */
-  const STROKE_T = [[0.3, 1.75], [1.88, 2.72], [2.84, 3.12]];
+  const STROKE_T = [[0.3, 1.62], [1.76, 1.96], [2.1, 3.15]];
   const SIGN_S = 380;
   function penAt(lt) {
     const S = M.STROKES;
@@ -358,7 +359,7 @@
     });
 
     // "builds ___." slot machine, ticking on the beat
-    const words = ['software.', 'systems.', 'motion.', 'products.'];
+    const words = ['enterprise systems.', 'cloud platforms.', 'fab-scale software.', 'for the long run.'];
     const sw = [1.5, 2.0, 2.5];
     let idx = 0; sw.forEach((s) => { if (lt >= s) idx++; });
     const tr = idx ? E.outExpo(P(lt, sw[idx - 1], sw[idx - 1] + 0.32)) : 1;
@@ -374,7 +375,7 @@
     ctx.restore();
     ctx.globalAlpha = wa;
     mono(17, 500); ctx.fillStyle = C.dim;
-    ctx.fillText(decode('ENGINEER · ARCHITECT · MOTION DESIGNER · PRODUCT BUILDER', P(lt, 1.0, 2.0), t), x0, 770);
+    ctx.fillText(decode('SOFTWARE ARCHITECT · ENTERPRISE SYSTEMS · CLOUD INFRASTRUCTURE', P(lt, 1.0, 2.0), t), x0, 770);
     ctx.globalAlpha = 1;
   }
 
@@ -437,16 +438,16 @@
    * 03 — SOFTWARE ARCHITECT: the characters fly into a 3D system
    * ================================================================ */
   const LAY = [
-    { y: 1.6, n: 'EDGE', nodes: [['CDN', -1.0, 0.5], ['WAF', 0.9, -0.5]] },
+    { y: 1.6, n: 'CLIENTS', nodes: [['Ops Console', -1.0, 0.5], ['Tool Gateway', 0.9, -0.5]] },
     { y: 0.8, n: 'GATEWAY', nodes: [['API Gateway', 0, 0]] },
-    { y: 0, n: 'SERVICES', nodes: [['Users', -1.25, 0.45], ['Orders', 0, -0.85], ['Payments', 1.25, 0.3], ['Search', 0.1, 1.0]] },
-    { y: -0.8, n: 'DATA', nodes: [['Postgres', -1.0, -0.4], ['Redis', 0.95, 0.6], ['S3', 0.45, -1.1]] },
+    { y: 0, n: 'SERVICES', nodes: [['MES', -1.25, 0.45], ['Dispatcher', 0, -0.85], ['Scheduler', 1.25, 0.3], ['SPC', 0.1, 1.0]] },
+    { y: -0.8, n: 'DATA', nodes: [['Postgres', -1.0, -0.4], ['Redis', 0.95, 0.6], ['Lakehouse', 0.45, -1.1]] },
     { y: -1.6, n: 'STREAM', nodes: [['Kafka', -0.5, 0], ['Workers', 1.0, -0.45]] },
   ];
   const NODES = [];
   LAY.forEach((l, li) => l.nodes.forEach(([lab, x, z]) => NODES.push({ lab, x, y: l.y, z, li })));
   const EDGES = [[0, 2], [1, 2], [2, 3], [2, 4], [2, 5], [2, 6], [3, 7], [3, 8], [4, 7], [4, 10], [5, 7], [5, 10], [6, 8], [6, 9], [7, 10], [10, 11]];
-  const DIVE = 9; // the Orders → Kafka edge carries the packet we dive into
+  const DIVE = 9; // the Dispatcher → Kafka edge carries the packet we dive into
 
   function archCam(lt) {
     const yaw = -0.8 + lt * 0.2, pitch = 0.5;
@@ -574,297 +575,313 @@
   }
 
   /* ================================================================
-   * 04 — MOTION DESIGNER: animation principles, performed live
+   * 04 — ENTERPRISE SYSTEMS: one die → the wafer → the whole fab floor
    * ================================================================ */
-  const FLOOR = 790, BR = 34, TC = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0];
-  let MLAY = null;
-  function motionLayout() {
-    if (MLAY) return MLAY;
-    font(230);
-    const { g, w } = glyphs('MOTION', 34);
-    const cap = ctx.measureText('M').actualBoundingBoxAscent || 230 * 0.7;
-    MLAY = g.map((c) => ({ ...c, cx: 960 - w / 2 + c.x + c.w / 2, top: FLOOR - cap }));
-    return MLAY;
-  }
-  function hop(lt, ta, tb, A, B, h) {
-    const dt = tb - ta, u = (lt - ta) / dt;
-    return { x: lerp(A[0], B[0], u), y: lerp(A[1], B[1], u) - 4 * h * u * (1 - u), vx: (B[0] - A[0]) / dt, vy: (B[1] - A[1]) / dt - (4 * h * (1 - 2 * u)) / dt };
-  }
-  function ballAt(lt) {
-    const L = motionLayout();
-    const cp = (i) => [L[i].cx, L[i].top - BR];
-    if (lt < TC[0]) return hop(Math.max(0, lt), 0, TC[0], [960, 540], cp(0), 130);
-    for (let i = 0; i < TC.length - 1; i++) if (lt < TC[i + 1]) return hop(lt, TC[i], TC[i + 1], cp(i), cp(i + 1), 230);
-    return hop(Math.min(lt, 3.5), 3.0, 3.5, cp(5), [1660, 430], 170);
-  }
-
-  function sMotion(lt, t) {
-    const L = motionLayout();
-    const fl = E.inOutCubic(P(lt, 0, 0.5));
-    ctx.fillStyle = 'rgba(243,240,232,.25)'; ctx.fillRect(960 - 820 * fl, FLOOR, 1640 * fl, 2);
-
-    // letters: dormant outlines until the ball brings them to life
-    font(230); ctx.textAlign = 'left';
-    L.forEach((c, i) => {
-      const tau = lt - TC[i];
-      ctx.save();
-      ctx.translate(c.cx, FLOOR);
-      if (tau >= 0) {
-        const k = Math.exp(-7 * tau) * Math.cos(17 * tau);
-        ctx.scale(1 + 0.2 * k, 1 - 0.3 * k);
-        ctx.fillStyle = PAL[i % PAL.length]; ctx.fillText(c.ch, -c.w / 2, 0);
-        if (tau < 0.45) {
-          ctx.strokeStyle = PAL[i % PAL.length]; ctx.lineWidth = 3; ctx.globalAlpha = 1 - tau / 0.45;
-          ctx.beginPath(); ctx.ellipse(0, -(FLOOR - c.top), 30 + tau * 380, (30 + tau * 380) * 0.3, 0, 0, TAU); ctx.stroke();
-        }
-      } else {
-        ctx.globalAlpha = P(lt, 0, 0.4) * 0.5; ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.strokeText(c.ch, -c.w / 2, 0);
+  const FAB_BG = '#08080b';
+  const WR = 330, DIE = 22, PITCH = 25;
+  let DIES = null;
+  function prepDies() {
+    DIES = [];
+    const n = Math.ceil(WR / PITCH) + 1;
+    for (let j = -n; j <= n; j++) {
+      for (let i = -n; i <= n; i++) {
+        const x = i * PITCH - DIE / 2, y = j * PITCH - DIE / 2;
+        const fx = Math.max(Math.abs(x), Math.abs(x + DIE)), fy = Math.max(Math.abs(y), Math.abs(y + DIE));
+        if (Math.hypot(fx, fy) < WR - 10) DIES.push({ x, y, h: hash(i + 99, j + 99), bad: hash(i + 7, j + 3) < 0.035, hero: !i && !j });
       }
-      ctx.restore();
-    });
-
-    // spacing chart: a dot per frame along the arc
-    ctx.fillStyle = 'rgba(243,240,232,.55)';
-    for (let f = Math.floor((lt - 0.55) * 24); f <= lt * 24; f++) {
-      const tf = f / 24;
-      if (tf < 0 || tf > 3.5) continue;
-      const b = ballAt(tf); ctx.fillRect(b.x - 1.5, b.y - 1.5, 3, 3);
     }
-    // onion skins
+  }
+
+  function wafer(lt, cx, cy, z, squash) {
+    const scan = P(lt, 0.45, 1.55), sy = lerp(-WR, WR, scan);
+    ctx.save(); ctx.translate(cx, cy); ctx.scale(z, z * squash);
+    const g = ctx.createRadialGradient(-90, -110, 20, 0, 0, WR);
+    g.addColorStop(0, '#2c2936'); g.addColorStop(1, '#100f15');
+    dot(0, 0, WR); ctx.fillStyle = g; ctx.fill();
+    ctx.strokeStyle = 'rgba(243,240,232,.35)'; ctx.lineWidth = 1.5 / z; ctx.stroke();
+    let done = 0;
+    for (const d of DIES) {
+      const ok = d.y + DIE / 2 < sy;
+      if (ok) done++;
+      ctx.fillStyle = d.hero ? C.lime : ok ? (d.bad ? C.coral : `rgba(212,255,58,${0.3 + 0.45 * d.h})`) : '#27242f';
+      ctx.fillRect(d.x, d.y, DIE, DIE);
+    }
+    if (z > 1.5) {
+      ctx.strokeStyle = 'rgba(7,7,10,.6)'; ctx.lineWidth = 0.5; ctx.beginPath();
+      for (let k = 0; k < 6; k++) { const y = -8 + k * 3.2; ctx.moveTo(-9, y); ctx.lineTo(-9 + 6 + hash(k, 60) * 12, y); }
+      for (let k = 0; k < 4; k++) { const x = 2 + k * 2.4; ctx.moveTo(x, -9); ctx.lineTo(x, -9 + 6 + hash(k, 61) * 12); }
+      ctx.stroke();
+    }
+    if (scan > 0 && scan < 1) {
+      const w = Math.sqrt(Math.max(0, WR * WR - sy * sy));
+      ctx.fillStyle = 'rgba(212,255,58,.14)'; ctx.fillRect(-w, sy - 34, w * 2, 34);
+      ctx.fillStyle = C.lime; ctx.fillRect(-w, sy - 1, w * 2, 2);
+    }
+    ctx.fillStyle = FAB_BG; dot(0, WR, 9); ctx.fill();
+    ctx.restore();
+    return done;
+  }
+
+  // isometric fab floor
+  const FC = [1130, 655], ISO = 0.94;
+  const iso = (x, y, z) => [FC[0] + (x - y) * 0.866 * ISO, FC[1] + (x + y) * 0.5 * ISO - z * ISO];
+  const TOOLS = [];
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 6; c++) TOOLS.push({ x: -340 + c * 132, y: -250 + r * 150, w: 84, d: 64, h: 36 + hash(c, r + 40) * 34, i: r * 6 + c });
+  TOOLS.sort((a, b) => a.x + a.y - (b.x + b.y));
+  const TRACK = [[-405, -315], [405, -315], [405, 315], [-405, 315]], TZ = 84;
+  const TRACK_LEN = 2 * (810 + 630);
+  function trackPt(u) {
+    let L = fract(u) * TRACK_LEN;
+    for (let i = 0; i < 4; i++) {
+      const a = TRACK[i], b = TRACK[(i + 1) % 4], seg = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      if (L <= seg) return [lerp(a[0], b[0], L / seg), lerp(a[1], b[1], L / seg)];
+      L -= seg;
+    }
+    return TRACK[0];
+  }
+  function poly(pts, fill) {
+    ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]))); ctx.closePath();
+    ctx.fillStyle = fill; ctx.fill();
+  }
+  function isoBox(x, y, w, d, h, top, left, right) {
+    poly([iso(x, y + d, 0), iso(x + w, y + d, 0), iso(x + w, y + d, h), iso(x, y + d, h)], left);
+    poly([iso(x + w, y, 0), iso(x + w, y + d, 0), iso(x + w, y + d, h), iso(x + w, y, h)], right);
+    poly([iso(x, y, h), iso(x + w, y, h), iso(x + w, y + d, h), iso(x, y + d, h)], top);
+  }
+
+  function fabFloor(lt, t) {
+    poly([iso(-450, -350, 0), iso(450, -350, 0), iso(450, 350, 0), iso(-450, 350, 0)], '#121119');
+    ctx.strokeStyle = 'rgba(243,240,232,.06)'; ctx.lineWidth = 1; ctx.beginPath();
+    for (let x = -450; x <= 450; x += 75) { const a = iso(x, -350, 0), b = iso(x, 350, 0); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); }
+    for (let y = -350; y <= 350; y += 70) { const a = iso(-450, y, 0), b = iso(450, y, 0); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); }
+    ctx.stroke();
+
+    // tools, back to front, each streaming events upward
+    for (const tl of TOOLS) {
+      isoBox(tl.x, tl.y, tl.w, tl.d, tl.h, '#45414f', '#1f1d27', '#2e2b37');
+      const led = iso(tl.x + tl.w / 2, tl.y + tl.d / 2, tl.h);
+      ctx.fillStyle = hash(tl.i, Math.floor(t * 2.5)) < 0.86 ? C.lime : C.yellow;
+      dot(led[0], led[1], 3.5); ctx.fill();
+    }
     ctx.strokeStyle = C.lime; ctx.lineWidth = 2;
-    for (let k = 1; k <= 7; k++) {
-      const tk = lt - k * 0.045;
-      if (tk < 0 || tk > 3.5) continue;
-      const b = ballAt(tk);
-      ctx.globalAlpha = 0.42 * (1 - k / 8); dot(b.x, b.y, BR); ctx.stroke();
+    for (const tl of TOOLS) {
+      for (let k = 0; k < 2; k++) {
+        const u = fract(lt * 0.85 + hash(tl.i, k * 5 + 1));
+        const a = iso(tl.x + tl.w / 2, tl.y + tl.d / 2, tl.h + 10 + u * 520), b = [a[0], a[1] - 26];
+        const keep = ctx.globalAlpha;
+        ctx.globalAlpha = keep * (1 - u) * 0.85;
+        ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+        ctx.globalAlpha = keep;
+      }
     }
-    ctx.globalAlpha = 1;
 
-    // the ball, with squash & stretch
-    const grow = E.inExpo(P(lt, 3.5, 4.0));
-    const b = ballAt(lt);
-    let bx = b.x, by = b.y, sx = 1, sy = 1, ang = 0;
-    const ci = TC.findIndex((tc) => Math.abs(lt - tc) < 0.07);
-    if (ci >= 0) {
-      const sq = 1 - 0.4 * Math.pow(1 - Math.abs(lt - TC[ci]) / 0.07, 1.5);
-      sy = sq; sx = 1 / Math.pow(sq, 0.7); by = L[ci].top - BR * sq;
-    } else {
-      const v = Math.hypot(b.vx, b.vy);
-      sx = 1 + Math.min(0.35, v / 4200); sy = 1 / Math.sqrt(sx); ang = Math.atan2(b.vy, b.vx);
+    // overhead transport: rails, pillars, vehicles carrying wafer pods
+    ctx.strokeStyle = 'rgba(243,240,232,.45)'; ctx.lineWidth = 1.5;
+    for (const off of [-6, 6]) {
+      ctx.beginPath();
+      TRACK.forEach(([x, y], i) => { const p = iso(x + Math.sign(x) * off, y + Math.sign(y) * off, TZ); i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); });
+      ctx.closePath(); ctx.stroke();
     }
-    if (grow > 0) { const e = E.inOutCubic(P(lt, 3.5, 4.0)); bx = lerp(bx, 960, e); by = lerp(by, 540, e); }
-    const br = BR * (1 + grow * 45);
-    ctx.save(); ctx.translate(bx, by); ctx.rotate(ang); ctx.scale(sx, sy);
-    ctx.fillStyle = C.lime; dot(0, 0, br); ctx.fill();
-    ctx.rotate(-ang); ctx.fillStyle = 'rgba(255,255,255,.75)'; dot(-br * 0.35, -br * 0.35, br * 0.22); ctx.fill();
+    ctx.strokeStyle = 'rgba(243,240,232,.12)';
+    TRACK.forEach(([x, y]) => { const a = iso(x, y, 0), b = iso(x, y, TZ); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); });
+    for (let k = 0; k < 14; k++) {
+      const [x, y] = trackPt(lt * 0.09 + k / 14);
+      isoBox(x - 11, y - 11, 22, 22, 14, '#e9e5da', '#9f9b92', '#c4c0b6');
+      const p = iso(x, y, TZ - 6); ctx.fillStyle = C.lime; ctx.fillRect(p[0] - 4, p[1] - 2, 8, 6);
+    }
+  }
+  const vehicleScreen = (lt, s) => { const [x, y] = trackPt(lt * 0.09); const p = iso(x, y, TZ); return [FC[0] + (p[0] - FC[0]) * s, FC[1] + (p[1] - FC[1]) * s]; };
+
+  function sFab(lt, t) {
+    if (!DIES) prepDies();
+    const zIn = lerp(3.4, 1, E.inOutCubic(P(lt, 0, 1.25)));
+    const fly = E.inOutCubic(P(lt, 1.55, 2.25));
+    const floorIn = E.outCubic(P(lt, 1.35, 2.2));
+    const out = E.inOutCubic(P(lt, 3.3, 3.95));
+    const fs = lerp(1.6, 1, floorIn);
+
+    ctx.save();
+    if (out > 0) { const s = lerp(1, 0.14, out); ctx.translate(lerp(FC[0], 740, out), lerp(FC[1], 925, out)); ctx.scale(s, s); ctx.translate(-FC[0], -FC[1]); }
+    if (floorIn > 0) {
+      ctx.save(); ctx.globalAlpha = floorIn;
+      ctx.translate(FC[0], FC[1]); ctx.scale(fs, fs); ctx.translate(-FC[0], -FC[1]);
+      fabFloor(lt, t);
+      ctx.restore();
+    }
     ctx.restore();
 
-    if (grow > 0.6) return;
-    const ua = 1 - P(lt, 3.4, 3.7);
-    ctx.globalAlpha = ua;
+    if (fly < 1) {
+      const tg = vehicleScreen(lt, fs);
+      const done = wafer(lt, lerp(960, tg[0], fly), lerp(540, tg[1], fly), zIn * lerp(1, 0.03, fly), lerp(1, 0.5, fly));
+      const la = P(lt, 0.9, 1.2) * (1 - P(lt, 1.45, 1.6));
+      if (la > 0) {
+        ctx.globalAlpha = la; mono(15, 700); ctx.textAlign = 'center'; ctx.fillStyle = C.dim;
+        ctx.fillText(`WAFER 07 · 300 mm · YIELD MAP · ${done}/${DIES.length} INSPECTED`, 960, 540 + WR + 52);
+        ctx.globalAlpha = 1;
+      }
+    }
 
-    // graph editor — the ball's actual y-curve
-    const gx = 1250, gy = 120, gw = 570, gh = 230;
-    const ga = E.outCubic(P(lt, 0.2, 0.6));
-    ctx.save(); ctx.globalAlpha = ga * ua; ctx.translate(0, (1 - ga) * -30);
-    rrect(gx, gy, gw, gh, 16); ctx.fillStyle = 'rgba(16,13,22,.92)'; ctx.fill(); ctx.strokeStyle = C.line; ctx.lineWidth = 2; ctx.stroke();
-    mono(13, 700); ctx.fillStyle = C.dim; ctx.textAlign = 'left'; ctx.fillText('ball.position.y', gx + 20, gy + 28);
-    ctx.textAlign = 'right'; ctx.fillText(`f ${pad(Math.floor(lt * 24), 3)}`, gx + gw - 20, gy + 28);
-    const px = (tt) => gx + 30 + (tt / 3.5) * (gw - 60), py = (y) => gy + 50 + ((y - 300) / 520) * (gh - 70);
-    ctx.strokeStyle = 'rgba(243,240,232,.07)'; ctx.lineWidth = 1;
-    for (let k = 0; k <= 7; k++) { ctx.beginPath(); ctx.moveTo(px(k * 0.5), gy + 44); ctx.lineTo(px(k * 0.5), gy + gh - 16); ctx.stroke(); }
-    const curve = (end) => { ctx.beginPath(); for (let k = 0; k <= 140; k++) { const tt = (k / 140) * end, y = py(ballAt(tt).y); k ? ctx.lineTo(px(tt), y) : ctx.moveTo(px(tt), y); } ctx.stroke(); };
-    ctx.setLineDash([3, 6]); ctx.strokeStyle = 'rgba(243,240,232,.22)'; curve(3.5);
-    ctx.setLineDash([]); ctx.strokeStyle = C.lime; ctx.lineWidth = 3; curve(Math.min(lt, 3.5));
-    TC.forEach((tc, i) => {
-      const x = px(tc), y = py(L[i].top - BR);
-      ctx.fillStyle = lt >= tc ? C.coral : 'rgba(243,240,232,.3)';
-      ctx.save(); ctx.translate(x, y); ctx.rotate(Math.PI / 4); ctx.fillRect(-5, -5, 10, 10); ctx.restore();
-    });
-    ctx.fillStyle = C.coral; ctx.fillRect(px(Math.min(lt, 3.5)) - 1, gy + 44, 2, gh - 60);
-    ctx.restore();
-
-    ctx.globalAlpha = P(lt, 0.1, 0.4) * ua; label('[ 04 ]  MOTION DESIGN', 120, 170);
-    ctx.globalAlpha = E.outCubic(P(lt, 0.25, 0.7)) * ua; serif(64); ctx.fillStyle = C.ink; ctx.textAlign = 'left';
-    ctx.fillText('Timing is', 120, 250); ctx.fillText('everything.', 120, 318);
-    ctx.globalAlpha = ua;
-
-    // DESIGNER drops in with follow-through
-    font(76); ctx.textAlign = 'left';
-    const dg = glyphs('DESIGNER', 34);
-    dg.g.forEach((c, i) => {
-      const q = P(lt, 0.7 + i * 0.05, 1.45 + i * 0.05);
-      if (q <= 0) return;
-      ctx.fillStyle = C.ink;
-      ctx.fillText(c.ch, 960 - dg.w / 2 + c.x, 940 - (1 - E.outBounce(q)) * 520);
-    });
-    ctx.globalAlpha = 1;
+    const ta = P(lt, 1.9, 2.3) * (1 - P(lt, 3.2, 3.5));
+    if (ta > 0) {
+      ctx.globalAlpha = ta; label('[ 04 ]  GIGA-FAB SCALE', 120, 150);
+      font(92); ctx.fillStyle = C.ink;
+      reveal('ENTERPRISE', 120, 240, 92, E.outExpo(P(lt, 1.9, 2.5)));
+      ctx.fillStyle = C.lime; reveal('SYSTEMS', 120, 330, 92, E.outExpo(P(lt, 2.0, 2.6)));
+      serif(40); ctx.fillStyle = C.ink; ctx.textAlign = 'left';
+      ctx.fillText('for giga-fab semiconductor manufacturing.', 120, 390);
+      mono(14, 700); ctx.fillStyle = C.dim; ctx.fillText('MES · DISPATCH · SCHEDULING · SPC · AMHS · 24/7', 120, 432);
+      ctx.globalAlpha = 1;
+    }
+    if (lt < 0.6) { ctx.globalAlpha = P(lt, 0, 0.2) * (1 - P(lt, 0.4, 0.6)); label('[ 04 ]  ONE DIE', 960, 150, 'center'); ctx.globalAlpha = 1; }
   }
 
   /* ================================================================
-   * 05 — PRODUCT BUILDER: ball → app icon → app → a wall of screens
+   * 05 — CLOUD INFRASTRUCTURE: schedule, autoscale, fail, self-heal
    * ================================================================ */
-  const PX = 780, PY = 170, PW = 360, PH = 740;
-  const SX = PX + 12, SY = PY + 12, SW = PW - 24, SH = PH - 24;
-  const icon = (r, c) => [SX + 16 + c * 80, SY + 98 + r * 96, 64];
-  function miniMark(x, y, s, col) {
-    ctx.save(); glyphXf(ctx, x, y, s); ctx.fillStyle = col; ctx.fill(M.path); ctx.restore();
+  const REG = { x: 120, y: 300, w: 1240, h: 520 }, AZW = 400;
+  const SCHED = [REG.x + REG.w / 2, REG.y - 4];
+  const FAIL = [1, 1], FAIL_T = 2.2;
+  const azX = (a) => REG.x + 20 + a * (AZW + 10);
+  const nodeRect = (a, n) => [azX(a) + 20, REG.y + 70 + n * 108, AZW - 40, 94];
+  const slotRect = (a, n, s) => { const [x, y] = nodeRect(a, n); return [x + 18 + (s % 8) * 40, y + 34 + Math.floor(s / 8) * 30, 26, 22]; };
+  let PODS = null;
+  function prepPods() {
+    PODS = [];
+    const used = new Set();
+    const place = (a, n) => { for (let s = 0; s < 16; s++) { const k = `${a}-${n}-${s}`; if (!used.has(k)) { used.add(k); return s; } } return -1; };
+    const svc = [C.lime, C.blue, C.violet, C.yellow];
+    for (let i = 0; i < 30; i++) { const a = i % 3, n = Math.floor(i / 3) % 3; PODS.push({ a, n, s: place(a, n), born: 0.6 + i * 0.022, col: svc[i % 4] }); }
+    for (let i = 0; i < 16; i++) { const a = i < 6 ? 2 : i % 3, n = i < 6 ? 3 : i % 3; PODS.push({ a, n, s: place(a, n), born: 1.65 + i * 0.035, col: svc[(i + 1) % 4] }); }
+    const targets = [[0, 0], [2, 1], [0, 2], [2, 0], [0, 1], [2, 2], [1, 0], [1, 2]];
+    let j = 0;
+    PODS.forEach((p) => {
+      if (p.a !== FAIL[0] || p.n !== FAIL[1]) return;
+      const [a, n] = targets[j % targets.length];
+      p.to = [a, n, place(a, n)]; p.move = 2.55 + j * 0.05; j++;
+    });
+  }
+  function podAt(p, lt) {
+    if (lt < p.born) return null;
+    const q = E.outCubic(P(lt, p.born, p.born + 0.35));
+    const h = slotRect(p.a, p.n, p.s);
+    let x = lerp(SCHED[0], h[0], q), y = lerp(SCHED[1], h[1], q) - Math.sin(q * Math.PI) * 60, col = p.col;
+    const s = E.outBack(P(lt, p.born, p.born + 0.35));
+    if (p.to && lt >= FAIL_T) {
+      if (lt < p.move) { col = C.coral; x += Math.sin(lt * 90 + p.s) * 2; }
+      else {
+        const m = E.inOutCubic(P(lt, p.move, p.move + 0.45)), to = slotRect(...p.to);
+        x = lerp(h[0], to[0], m); y = lerp(h[1], to[1], m) - Math.sin(m * Math.PI) * 110;
+        col = m < 1 ? C.coral : p.col;
+      }
+    }
+    return { x, y, s, col };
   }
 
-  function phoneUI(lt) {
-    rrect(PX, PY, PW, PH, 56); ctx.fillStyle = '#121117'; ctx.fill();
-    ctx.strokeStyle = '#34313d'; ctx.lineWidth = 3; ctx.stroke();
-    rrect(SX, SY, SW, SH, 44); ctx.fillStyle = '#0b0a0f'; ctx.fill();
-    rrect(PX + PW / 2 - 52, PY + 24, 104, 30, 15); ctx.fillStyle = '#000'; ctx.fill();
-    mono(15, 700); ctx.fillStyle = C.ink; ctx.textAlign = 'left'; ctx.fillText('9:41', SX + 30, SY + 36);
+  function sCloud(lt, t) {
+    if (!PODS) prepPods();
+    const push = E.inExpo(P(lt, 3.4, 4.0));
+    ctx.save();
+    if (push > 0) { const z = 1 + push * 0.9; ctx.translate(740, 560); ctx.scale(z, z); ctx.translate(-740, -560); ctx.globalAlpha = 1 - push; }
+    const base = ctx.globalAlpha;
 
-    for (let r = 0; r < 5; r++) {
-      for (let c = 0; c < 4; c++) {
-        if (r === 1 && c === 1) continue;
-        const i = r * 4 + c, s = E.outBack(P(lt, 0.3 + i * 0.014, 0.6 + i * 0.014));
+    // on-prem fab feeding the cloud (where the fab floor just shrank to)
+    rrect(610, 900, 260, 50, 12); ctx.fillStyle = '#16141c'; ctx.fill(); ctx.strokeStyle = C.lime; ctx.lineWidth = 1.5; ctx.stroke();
+    mono(14, 700); ctx.fillStyle = C.lime; ctx.textAlign = 'center'; ctx.fillText('FAB · ON-PREM', 740, 930);
+    for (let k = 0; k < 5; k++) {
+      const x = 650 + k * 45;
+      ctx.strokeStyle = 'rgba(212,255,58,.25)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, 900); ctx.lineTo(x, REG.y + REG.h); ctx.stroke();
+      for (let j = 0; j < 2; j++) { const u = fract(lt * 1.6 + k * 0.23 + j * 0.5); ctx.fillStyle = C.lime; ctx.fillRect(x - 2, lerp(900, REG.y + REG.h, u) - 4, 4, 8); }
+    }
+
+    // region + availability zones
+    const fr = E.outCubic(P(lt, 0, 0.5));
+    ctx.globalAlpha = base * fr;
+    rrect(REG.x, REG.y, REG.w, REG.h, 22); ctx.strokeStyle = 'rgba(243,240,232,.3)'; ctx.lineWidth = 1.5; ctx.stroke();
+    mono(13, 700); ctx.fillStyle = C.dim; ctx.textAlign = 'left'; ctx.fillText('REGION 1', REG.x + 20, REG.y + 28);
+    ctx.setLineDash([5, 7]); ctx.strokeStyle = 'rgba(111,140,255,.35)';
+    for (let a = 0; a < 3; a++) {
+      rrect(azX(a), REG.y + 42, AZW, REG.h - 58, 14); ctx.stroke();
+      ctx.fillStyle = C.blue; ctx.fillText(`AZ-${'ABC'[a]}`, azX(a) + 20, REG.y + 62);
+    }
+    ctx.setLineDash([]);
+    ctx.fillStyle = C.ink; dot(SCHED[0], SCHED[1], 6); ctx.fill();
+    ctx.textAlign = 'center'; ctx.fillStyle = C.dim; ctx.fillText('scheduler', SCHED[0], SCHED[1] - 14);
+    ctx.globalAlpha = base;
+
+    // nodes
+    for (let a = 0; a < 3; a++) {
+      for (let n = 0; n < 4; n++) {
+        if (n === 3 && a !== 2) continue;
+        const born = n === 3 ? 1.55 : 0.2 + (a * 3 + n) * 0.04;
+        const s = E.outBack(P(lt, born, born + 0.4));
         if (s <= 0) continue;
-        const [x, y, z] = icon(r, c), col = PAL[Math.floor(hash(i, 50) * PAL.length)];
-        ctx.save(); ctx.translate(x + z / 2, y + z / 2); ctx.scale(s, s);
-        rrect(-z / 2, -z / 2, z, z, 16); ctx.fillStyle = '#1d1b24'; ctx.fill();
-        ctx.fillStyle = col; ctx.globalAlpha *= 0.85;
-        const k = Math.floor(hash(i, 51) * 3);
-        if (k === 0) { dot(0, 0, 12); ctx.fill(); }
-        else if (k === 1) ctx.fillRect(-11, -11, 22, 22);
-        else { ctx.beginPath(); ctx.moveTo(0, -13); ctx.lineTo(13, 10); ctx.lineTo(-13, 10); ctx.closePath(); ctx.fill(); }
+        const [x, y, w, h] = nodeRect(a, n);
+        const failed = a === FAIL[0] && n === FAIL[1] && lt >= FAIL_T;
+        ctx.save(); ctx.translate(x + w / 2, y + h / 2); ctx.scale(s, s); ctx.translate(-x - w / 2, -y - h / 2);
+        if (failed) ctx.globalAlpha = base * lerp(1, 0.45, P(lt, 3.0, 3.3));
+        rrect(x, y, w, h, 12); ctx.fillStyle = failed ? 'rgba(255,77,46,.1)' : '#111019'; ctx.fill();
+        ctx.strokeStyle = failed ? C.coral : n === 3 ? C.lime : 'rgba(111,140,255,.55)'; ctx.lineWidth = 1.5; ctx.stroke();
+        mono(12, 700); ctx.textAlign = 'left'; ctx.fillStyle = C.dim;
+        ctx.fillText(`az-${'abc'[a]}/node-${n + 1}`, x + 18, y + 22);
+        ctx.textAlign = 'right';
+        if (failed) { ctx.fillStyle = C.coral; ctx.fillText('✗ NotReady', x + w - 16, y + 22); }
+        else { ctx.fillStyle = C.lime; ctx.fillText(n === 3 && lt < 1.95 ? 'provisioning…' : '● Ready', x + w - 16, y + 22); }
+        ctx.strokeStyle = 'rgba(243,240,232,.08)'; ctx.lineWidth = 1;
+        for (let k = 0; k < 16; k++) { const [sx, sy, sw, sh] = slotRect(a, n, k); rrect(sx, sy, sw, sh, 5); ctx.stroke(); }
         ctx.restore();
       }
     }
-    rrect(SX + 14, SY + SH - 96, SW - 28, 82, 30); ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fill();
-    return icon(1, 1);
-  }
 
-  function appUI(lt, x, y, w, h, a) {
-    if (a <= 0) return;
-    ctx.save(); ctx.globalAlpha = a;
-    const sp = (d) => (1 - E.outBack(P(lt, d, d + 0.45))) * 50;
-    serif(30); ctx.fillStyle = C.dim; ctx.textAlign = 'left'; ctx.fillText('Good morning,', x + 28, y + 86 + sp(1.3));
-    font(36); ctx.fillStyle = C.ink; ctx.fillText('Xyphuz', x + 28, y + 128 + sp(1.36));
-
-    // activity rings
-    const cy0 = y + 150 + sp(1.45);
-    rrect(x + 20, cy0, w - 40, 220, 26); ctx.fillStyle = '#17151d'; ctx.fill();
-    const rc = [x + 120, cy0 + 110], vals = [0.92, 0.78, 1.0], cols = [C.lime, C.coral, C.blue], names = ['Ship', 'Build', 'Learn'];
-    vals.forEach((v, i) => {
-      const r = 76 - i * 22, p = E.outCubic(P(lt, 1.6 + i * 0.12, 2.5 + i * 0.12)) * v;
-      ctx.lineCap = 'round'; ctx.lineWidth = 16;
-      ctx.strokeStyle = 'rgba(255,255,255,.07)'; ctx.beginPath(); ctx.arc(rc[0], rc[1], r, 0, TAU); ctx.stroke();
-      if (p > 0) { ctx.strokeStyle = cols[i]; ctx.beginPath(); ctx.arc(rc[0], rc[1], r, -Math.PI / 2, -Math.PI / 2 + TAU * p); ctx.stroke(); }
-      mono(14, 700); ctx.fillStyle = cols[i]; ctx.fillText(names[i].toUpperCase(), x + 220, cy0 + 70 + i * 40);
-      ctx.fillStyle = C.ink; ctx.fillText(Math.round(p * 100) + '%', x + 220, cy0 + 88 + i * 40);
-    });
-    ctx.lineCap = 'butt';
-
-    // tasks tick off with a stagger
-    ['Design review', 'Deploy v2.4 → prod', 'Animate onboarding'].forEach((s, i) => {
-      const ry = y + 400 + i * 66 + sp(1.55 + i * 0.07);
-      rrect(x + 20, ry, w - 40, 54, 16); ctx.fillStyle = '#17151d'; ctx.fill();
-      const ck = E.outBack(P(lt, 2.15 + i * 0.16, 2.4 + i * 0.16));
-      ctx.strokeStyle = ck > 0 ? C.lime : C.dim; ctx.lineWidth = 2; dot(x + 48, ry + 27, 11); ctx.stroke();
-      if (ck > 0) {
-        ctx.fillStyle = C.lime; dot(x + 48, ry + 27, 11 * Math.min(ck, 1.1)); ctx.fill();
-        ctx.strokeStyle = '#0b0a0f'; ctx.lineWidth = 3; ctx.beginPath();
-        ctx.moveTo(x + 42, ry + 27); ctx.lineTo(x + 46, ry + 32); ctx.lineTo(x + 54, ry + 22); ctx.stroke();
-      }
-      mono(15, 500); ctx.fillStyle = ck > 0 ? C.dim : C.ink; ctx.fillText(s, x + 72, ry + 32);
-      if (ck > 0) { ctx.fillStyle = C.dim; ctx.fillRect(x + 72, ry + 27, ctx.measureText(s).width * Math.min(1, ck), 1.5); }
-    });
-    rrect(x + 70, y + h - 64, w - 140, 44, 22); ctx.fillStyle = '#1d1b24'; ctx.fill();
-    ctx.restore();
-  }
-
-  function sProduct(lt, t) {
-    const pull = E.inOutCubic(P(lt, 2.7, 3.5));
-    const s = lerp(1, 0.105, pull);
-    const cellW = 560, cellH = 940;
-
-    // the wall of screens around the hero phone
-    let lit = 0;
-    if (pull > 0) {
-      const wr = (lt - 2.85) * 16;
-      const nx = Math.ceil(960 / (cellW * s)) + 1, ny = Math.ceil(540 / (cellH * s)) + 1;
-      for (let j = -ny; j <= ny; j++) {
-        for (let i = -nx; i <= nx; i++) {
-          if (!i && !j) continue;
-          const x = 960 + i * cellW * s, y = 540 + j * cellH * s, w = PW * s, h = PH * s;
-          if (x + w < 0 || x - w > W || y + h < 0 || y - h > H) continue;
-          rrect(x - w / 2, y - h / 2, w, h, 56 * s); ctx.fillStyle = '#16141c'; ctx.fill();
-          if (Math.hypot(i, j * 1.7) + hash(i * 31, j) * 1.5 < wr) {
-            lit++;
-            ctx.fillStyle = PAL[Math.floor(hash(i, j + 99) * 5)]; ctx.globalAlpha = 0.85;
-            rrect(x - w / 2 + 12 * s, y - h / 2 + 12 * s, w - 24 * s, h - 24 * s, 44 * s); ctx.fill(); ctx.globalAlpha = 1;
-          }
-        }
-      }
+    // pods
+    for (const p of PODS) {
+      const st = podAt(p, lt);
+      if (!st) continue;
+      ctx.save(); ctx.translate(st.x + 13, st.y + 11); ctx.scale(st.s, st.s);
+      rrect(-13, -11, 26, 22, 5); ctx.fillStyle = st.col; ctx.fill();
+      ctx.restore();
     }
 
-    ctx.save();
-    ctx.translate(960, 540); ctx.scale(s, s); ctx.translate(-960, -540);
-    ctx.globalAlpha = P(lt, 0.15, 0.45);
-    const [hx, hy, hs] = phoneUI(lt);
+    // title
+    ctx.globalAlpha = base * P(lt, 0.1, 0.4); label('[ 05 ]  CLOUD', 120, 150);
+    ctx.globalAlpha = base; font(92); ctx.fillStyle = C.ink;
+    reveal('CLOUD INFRASTRUCTURE', 120, 258, 92, E.outExpo(P(lt, 0.15, 0.8)));
+
+    // live metrics: traffic climbs, p99 holds through the failure
+    const px = 1410, py = 300, pw = 390, ph = 230;
+    ctx.globalAlpha = base * E.outCubic(P(lt, 0.3, 0.7));
+    rrect(px, py, pw, ph, 16); ctx.fillStyle = '#100f15'; ctx.fill(); ctx.strokeStyle = C.line; ctx.lineWidth = 1.5; ctx.stroke();
+    mono(13, 700); ctx.textAlign = 'left'; ctx.fillStyle = C.lime; ctx.fillText('requests / s', px + 20, py + 30);
+    ctx.fillStyle = C.blue; ctx.fillText('p99 latency', px + 160, py + 30);
+    const gx = (tt) => px + 20 + (tt / 4) * (pw - 40), gy = (v) => py + ph - 20 - v * (ph - 70);
+    const rps = (tt) => 0.18 + 0.62 * smooth(P(tt, 1.3, 2.1)) + 0.04 * Math.sin(tt * 23) * Math.sin(tt * 7);
+    const lat = (tt) => 0.2 + 0.03 * Math.sin(tt * 19) + 0.12 * Math.exp(-Math.pow((tt - 2.35) * 6, 2));
+    [[rps, C.lime], [lat, C.blue]].forEach(([f, col]) => {
+      ctx.strokeStyle = col; ctx.lineWidth = 2.5; ctx.beginPath();
+      for (let k = 0; k <= 80; k++) { const tt = (k / 80) * Math.min(lt, 4); k ? ctx.lineTo(gx(tt), gy(f(tt))) : ctx.moveTo(gx(tt), gy(f(tt))); }
+      ctx.stroke();
+    });
+
+    // ops log
+    const logs = [
+      [0.2, '$ terraform apply', C.dim], [0.5, '✓ region · 3 AZs · 9 nodes', C.lime], [0.8, 'scheduler: placed 30 pods', C.ink],
+      [1.5, 'hpa: dispatch 6 → 14 replicas', C.ink], [1.6, 'autoscaler: +1 node in az-c', C.ink], [2.2, '✗ az-b/node-2 NotReady', C.coral],
+      [2.5, 'evicting 6 pods → rescheduling', C.ink], [3.0, '✓ healed · zero downtime', C.lime],
+    ];
+    const ly = 560;
+    rrect(px, ly, pw, 260, 16); ctx.fillStyle = '#0c0b10'; ctx.fill(); ctx.strokeStyle = C.line; ctx.stroke();
+    mono(14, 500);
+    logs.forEach(([tt, s, col], i) => {
+      if (lt < tt) return;
+      ctx.fillStyle = col; ctx.fillText(s.slice(0, Math.ceil(P(lt, tt, tt + 0.25) * s.length)), px + 20, ly + 36 + i * 28);
+    });
+    ctx.restore();
     ctx.globalAlpha = 1;
-
-    // ball shrinks into the app icon, circle → squircle, then the app opens
-    const e = E.inOutExpo(P(lt, 0, 0.55));
-    const R = lerp(1500, hs / 2, e);
-    const icx = lerp(960, hx + hs / 2, e), icy = lerp(540, hy + hs / 2, e);
-    const corner = lerp(R, 16, P(lt, 0.42, 0.6));
-    const tap = 1 - 0.1 * Math.sin(Math.PI * P(lt, 0.7, 0.88));
-    const op = E.outExpo(P(lt, 0.88, 1.38));
-    const rx0 = icx - R * tap, ry0 = icy - R * tap, rw0 = 2 * R * tap;
-    const ax = lerp(rx0, SX, op), ay = lerp(ry0, SY, op), aw = lerp(rw0, SW, op), ah = lerp(rw0, SH, op);
-    rrect(ax, ay, aw, ah, lerp(corner, 44, op));
-    ctx.fillStyle = mixHex(C.lime, '#0b0a0f', P(lt, 1.12, 1.4)); ctx.fill();
-    const ms = lerp(hs * 0.36, 150, op) * (1 - P(lt, 1.1, 1.35));
-    if (ms > 1 && lt > 0.4) miniMark(ax + aw / 2, ay + ah / 2, ms, '#0b0a0f');
-    if (lt > 0.68 && lt < 1.0) {
-      const q = P(lt, 0.68, 1.0);
-      ctx.fillStyle = `rgba(255,255,255,${0.5 * (1 - q)})`; dot(hx + hs / 2, hy + hs / 2, 20 + q * 60); ctx.fill();
-    }
-    appUI(lt, SX, SY, SW, SH, P(lt, 1.2, 1.4));
-    ctx.restore();
-
-    // motion callouts
-    const ca = P(lt, 1.7, 2.0) * (1 - P(lt, 2.6, 2.8));
-    if (ca > 0) {
-      ctx.globalAlpha = ca; ctx.strokeStyle = 'rgba(243,240,232,.4)'; ctx.lineWidth = 1;
-      [[[SX + 210, SY + 260], 'spring(stiffness: 260, damping: 20)'], [[SX + 300, SY + 500], 'ease-out 240ms · stagger 160ms']].forEach(([[x, y], str], i) => {
-        const lx = 1230, ly = y - 20;
-        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(lx - 20, ly); ctx.lineTo(lx - 8, ly); ctx.stroke();
-        ctx.fillStyle = C.lime; dot(x, y, 4); ctx.fill();
-        mono(15, 500); ctx.fillStyle = i ? C.ink : C.lime; ctx.textAlign = 'left'; ctx.fillText(str, lx, ly + 5);
-      });
-      ctx.globalAlpha = 1;
-    }
-    const la = P(lt, 1.3, 1.7) * (1 - P(lt, 2.6, 2.8));
-    if (la > 0) {
-      ctx.globalAlpha = la; label('[ 05 ]  PRODUCT', 140, 400);
-      serif(60); ctx.fillStyle = C.ink; ctx.textAlign = 'left';
-      ctx.fillText('Idea → interface', 140, 478); ctx.fillText('→ in your hand.', 140, 548);
-      ctx.globalAlpha = 1;
-    }
-
-    // title over the wall
-    const ta = P(lt, 2.95, 3.15);
-    if (ta > 0) {
-      ctx.fillStyle = 'rgba(7,7,10,.78)'; ctx.fillRect(0, 420, W, 380 * E.outExpo(ta));
-      font(150); ctx.fillStyle = C.ink;
-      reveal('PRODUCT BUILDER', 960, 600, 150, E.outExpo(P(lt, 3.0, 3.5)), 'center');
-      ctx.globalAlpha = P(lt, 3.2, 3.45); serif(44); ctx.textAlign = 'center';
-      ctx.fillText('from one person to everyone.', 960, 680);
-      mono(15, 700); ctx.fillStyle = C.lime; ctx.fillText(`${lit} SCREENS LIT`, 960, 760);
-      ctx.globalAlpha = 1;
-    }
   }
 
   /* ================================================================
    * 06 — MANIFESTO: a typographic tunnel, one word per beat
    * ================================================================ */
-  const WORDS = ['DESIGN', 'CODE', 'ANIMATE', 'ARCHITECT', 'SHIP', 'SCALE', 'DELIGHT', 'REPEAT'];
+  const WORDS = ['DESIGN', 'BUILD', 'SCALE', 'AUTOMATE', 'OBSERVE', 'HARDEN', 'SHIP', 'REPEAT'];
   const WT = [0.5, 1.0, 1.5, 2.0, 2.25, 2.5, 2.75, 3.0];
   const WCOL = [C.lime, C.ink, C.coral, C.ink, C.lime, C.blue, C.ink, C.lime];
   function sManifesto(lt) {
@@ -925,10 +942,10 @@
     g.forEach((c) => ctx.fillText(c.ch, 960 - w / 2 + c.x, 755));
     ctx.globalAlpha = 1;
     mono(20, 500); ctx.fillStyle = C.dim; ctx.textAlign = 'center';
-    ctx.fillText(decode('SOFTWARE ENGINEER  /  SOFTWARE ARCHITECT  /  MOTION DESIGNER  /  PRODUCT BUILDER', P(lt, 0.6, 1.4), t), 960, 808);
+    ctx.fillText(decode('SOFTWARE ARCHITECT  /  ENTERPRISE SYSTEMS  /  CLOUD INFRASTRUCTURE', P(lt, 0.6, 1.4), t), 960, 808);
     const ta = E.outCubic(P(lt, 1.1, 1.6));
     ctx.globalAlpha = ta; serif(46); ctx.fillStyle = C.ink;
-    ctx.fillText('Let’s build something unforgettable.', 960, 880 + (1 - ta) * 18);
+    ctx.fillText('Started in motion design. Now I build what doesn’t fall over.', 960, 876 + (1 - ta) * 18);
     ctx.globalAlpha = P(lt, 1.4, 1.9); mono(18, 700); ctx.fillStyle = C.lime;
     ctx.fillText('xyphuz.com   ·   github.com/wst24365888', 960, 940);
     ctx.globalAlpha = 1;
@@ -939,15 +956,15 @@
     { s: 4, e: 8, id: '01', name: 'IDENTITY', bg: C.bg, draw: sIdentity },
     { s: 8, e: 12, id: '02', name: 'SOFTWARE ENGINEER', bg: '#07080a', draw: sEng },
     { s: 12, e: 16, id: '03', name: 'SOFTWARE ARCHITECT', bg: '#05070f', draw: sArch },
-    { s: 16, e: 20, id: '04', name: 'MOTION DESIGNER', bg: '#0a0710', draw: sMotion },
-    { s: 20, e: 24, id: '05', name: 'PRODUCT BUILDER', bg: '#0b0a0f', draw: sProduct },
+    { s: 16, e: 20, id: '04', name: 'ENTERPRISE SYSTEMS', bg: FAB_BG, draw: sFab },
+    { s: 20, e: 24, id: '05', name: 'CLOUD INFRASTRUCTURE', bg: '#07080d', draw: sCloud },
     { s: 24, e: 27, id: '06', name: 'MANIFESTO', bg: C.bg, draw: sManifesto },
     { s: 27, e: 30, id: '07', name: 'XYPHUZ', bg: C.bg, draw: sOutro },
   ];
 
   /* ---------- global layers ---------- */
   const FLASHES = [[4, 0.9], [24, 0.6], [27, 1]];
-  const IMPACTS = [[4, 16], [16.5, 5], [20, 7], [24, 8], [27, 16]];
+  const IMPACTS = [[4, 16], [16, 5], [22.2, 6], [24, 8], [27, 16]];
 
   function hud(t, sc) {
     ctx.save();
@@ -1022,7 +1039,6 @@
     try {
       await Promise.race([Promise.all(fonts.map((f) => document.fonts.load(f))), new Promise((r) => setTimeout(r, 3500))]);
     } catch (e) { /* fall back to system fonts */ }
-    MLAY = null;
     prepGrid();
   }
 

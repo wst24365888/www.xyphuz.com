@@ -134,6 +134,10 @@
       bp.frequency.setValueAtTime(2200, w); bp.frequency.linearRampToValueAtTime(3400, w + d);
       n.connect(bp).connect(g).connect(bus);
     },
+    alarm(w, f) {
+      const o = osc('square', f, w, w + 0.2), lp = filt('lowpass', 1800, 1), g = gain();
+      env(g, w, 0.004, 0.07, 0.15); o.connect(lp).connect(g).connect(bus);
+    },
     boing(w, m, a = 0.12) {
       const o = osc('sine', mtof(m) * 1.5, w, w + 0.4); o.frequency.exponentialRampToValueAtTime(mtof(m), w + 0.06);
       const g = gain(); env(g, w, 0.003, a, 0.32); o.connect(g).connect(bus);
@@ -153,7 +157,7 @@
 
   // 0–4  signature: drone, the pen scratching each stroke, riser into the drop
   at(0, (w) => I.pad(w, [45, 52, 57], 3.8, 0.035));
-  [[0.3, 1.75], [1.88, 2.72], [2.84, 3.12]].forEach(([a, b], i) => {
+  [[0.3, 1.62], [1.76, 1.96], [2.1, 3.15]].forEach(([a, b], i) => {
     at(a, (w) => I.blip(w, [1320, 1568, 1760][i], 0.05, 0.08));
     at(a, (w) => I.scratch(w, b - a, 0.11));
   });
@@ -185,11 +189,15 @@
   [8, 12, 16, 20].forEach((t) => { at(t - 0.45, (w) => I.whoosh(w, 0.45, 0.16)); at(t, (w) => I.hat(w, 0.16, 0.6)); });
   for (let k = 0; k < 20; k++) at(8.12 + k / 21, (w) => I.hat(w, 0.06, 0.012)); // typing
   at(15.3, (w) => I.riser(w, 0.7, 0.16)); // the dive
-  [69, 72, 74, 76, 79, 81].forEach((m, i) => at(16.5 + i * 0.5, (w) => I.boing(w, m, 0.12))); // ball meets letters
-  at(20.7, (w) => I.blip(w, 2200, 0.08, 0.03)); // tap
-  at(20.88, (w) => I.whoosh(w, 0.35, 0.14)); // app opens
-  [22.15, 22.31, 22.47].forEach((t, i) => at(t, (w) => I.blip(w, [1318, 1568, 1976][i], 0.06, 0.06))); // checkboxes
-  at(22.7, (w) => I.riser(w, 1.3, 0.18));
+  at(16.45, (w) => I.whoosh(w, 1.1, 0.12)); // wafer inspection sweep
+  [69, 72, 76, 81].forEach((m, i) => at(17.55 + i * 0.12, (w) => I.boing(w, m, 0.07))); // wafer lands on the transport
+  at(19.3, (w) => I.whoosh(w, 0.6, 0.14)); // fab shrinks into the cloud
+  for (let i = 0; i < 30; i += 2) at(20.6 + i * 0.022, (w) => I.blip(w, 1760 + (i % 4) * 220, 0.035, 0.03)); // pods scheduled
+  for (let i = 0; i < 16; i += 2) at(21.65 + i * 0.035, (w) => I.blip(w, 1980, 0.035, 0.03)); // autoscale
+  [22.2, 22.38].forEach((t, i) => at(t, (w) => I.alarm(w, i ? 440 : 523))); // node down
+  [22.55, 22.7, 22.85].forEach((t, i) => at(t, (w) => I.pluck(w, [76, 79, 84][i], 0.05))); // rescheduled
+  at(23.0, (w) => I.boing(w, 88, 0.08)); // healed
+  at(23.3, (w) => I.riser(w, 0.7, 0.16));
 
   // 24–27  manifesto: a hit on every word, snare roll, riser
   [24, 24.5, 25, 25.5, 26, 26.25, 26.5, 26.75].forEach((t, i) => {
