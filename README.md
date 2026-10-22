@@ -1,40 +1,22 @@
 # www.xyphuz.com
 
-![www.xyphuz.com](https://socialify.git.ci/wst24365888/www.xyphuz.com/image?description=1&font=KoHo&name=1&owner=1&pattern=Circuit%20Board&theme=Light)
+A 30-second motion-graphics showreel for **Xyphuz** — software engineer, software architect, motion designer, product builder.
 
-[![Stargazers][stars-shield]][stars-url]
+No framework, no video file: the reel is drawn live on a `<canvas>` (`public/reel.js`) as a pure function of time, and the soundtrack is synthesised with WebAudio (`public/audio.js`) on the same 120 BPM grid, so play, pause, seek and loop all stay in sync.
 
-## About
+## Run locally
 
-My personal website using [SvelteKit](https://kit.svelte.dev/) with TypeScript.
+Any static server works:
 
-Please head over to <https://www.xyphuz.com> to find out more!
+```bash
+npx serve public
+```
 
-<p align="right">(<a href="#top">back to top</a>)</p>
+## Deploy
 
-## Roadmap
-
-- [ ] Improve UX.
-- [ ] Add tests.
-
-Feel free to [open an issue](https://github.com/wst24365888/www.xyphuz.com/issues) if you have any questions.
-
-<p align="right">(<a href="#top">back to top</a>)</p>
-
-[stars-shield]: https://img.shields.io/github/stars/wst24365888/www.xyphuz.com.svg?style=for-the-badge
-[stars-url]: https://github.com/wst24365888/www.xyphuz.com/stargazers
+Pushing to `main` builds an `nginx` image (`Dockerfile`, serving `public/` on port 3000) and restarts it on the VPS via `.github/workflows/deploy.yaml`.
 
 ## Contact
 
-### Author
-
-- HSING-HAN, WU (Xyphuz)
-  - Mail me: xyphuzwu@gmail.com
-  - About me: <https://www.xyphuz.com>
-  - GitHub: <https://github.com/wst24365888>
-
-### Project Link
-
-- <https://github.com/wst24365888/www.xyphuz.com>
-
-<p align="right">(<a href="#top">back to top</a>)</p>
+- HSING-HAN, WU (Xyphuz) — xyphuzwu@gmail.com
+- <https://github.com/wst24365888>

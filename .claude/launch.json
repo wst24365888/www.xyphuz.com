@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "reel", "runtimeExecutable": "python", "runtimeArgs": ["-m", "http.server", "4173", "-d", "public"], "port": 4173 }
+  ]
+}
