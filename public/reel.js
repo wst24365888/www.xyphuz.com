@@ -1,21 +1,28 @@
 /* XYPHUZ — Showreel 2026
  * Timeline + direction for the GPU engine, and a crisp 2D overlay for type.
- * Every frame is a pure function of time t ∈ [0, 30): camera, particle
- * formation morphs, the raymarched mark, post-processing and typography are
- * all derived from t, so the reel scrubs, pauses and loops with no state.
  *
- * One continuous shot: ~130k particles write the signature in its real stroke
- * order → it solidifies into a raymarched 3D mark inside an accretion halo →
- * the halo collapses and detonates into volumetric type → a live system
- * architecture → a dive into one packet that lands as a die on a wafer → the
- * fab floor → event streams rise into a planet-scale cloud that fails over and
+ * render(t): the 30-second reel. Every frame is a pure function of t, so it
+ * scrubs, pauses and replays with no state. One continuous shot: particles
+ * write the signature in its real stroke order → a 3D mark inside an accretion
+ * halo → volumetric type → a live system architecture → a packet that lands as
+ * a die on a wafer → the fab floor → a planet-scale cloud that fails over and
  * heals → a manifesto the particles spell word by word → the signature again.
+ *
+ * renderHome(state): what the reel becomes once it ends — the same world, now
+ * interactive: re-form the particles into each role, orbit, push them around.
+ *
+ * Layout is responsive: the overlay works in a virtual space whose short side
+ * is ~1080 units, and the 3D camera pulls back on narrow screens so every
+ * subject still fits.
  */
 (function () {
   'use strict';
 
-  const W = 1920, H = 1080, DUR = 30, TAU = Math.PI * 2;
+  const DUR = 30, TAU = Math.PI * 2;
   const MK = window.Mark3D, SH = window.Shapes, EN = window.Engine, I = SH.IDX;
+
+  // Virtual overlay space, recomputed every frame from the canvas size.
+  let W = 1920, H = 1080, PORT = false, M = 84, TOP = 150, FRAME = 1, SCALE = 1;
 
   const C = { ink: '#f3f0e8', dim: '#8a8896', line: '#26262f', lime: '#d4ff3a', coral: '#ff4d2e', blue: '#6f8cff' };
   const LIME = [0.83, 1, 0.23];
@@ -71,23 +78,6 @@
     s(k) { const m = M4.id(); m[0] = m[5] = m[10] = k; return m; },
     m3: (m) => new Float32Array([m[0], m[1], m[2], m[4], m[5], m[6], m[8], m[9], m[10]]),
     apply: (m, p) => [m[0] * p[0] + m[4] * p[1] + m[8] * p[2] + m[12], m[1] * p[0] + m[5] * p[1] + m[9] * p[2] + m[13], m[2] * p[0] + m[6] * p[1] + m[10] * p[2] + m[14]],
-    inv(m) {
-      const o = new Float32Array(16);
-      const [a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, a30, a31, a32, a33] = m;
-      const b00 = a00 * a11 - a01 * a10, b01 = a00 * a12 - a02 * a10, b02 = a00 * a13 - a03 * a10, b03 = a01 * a12 - a02 * a11;
-      const b04 = a01 * a13 - a03 * a11, b05 = a02 * a13 - a03 * a12, b06 = a20 * a31 - a21 * a30, b07 = a20 * a32 - a22 * a30;
-      const b08 = a20 * a33 - a23 * a30, b09 = a21 * a32 - a22 * a31, b10 = a21 * a33 - a23 * a31, b11 = a22 * a33 - a23 * a32;
-      const d = 1 / (b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06);
-      o[0] = (a11 * b11 - a12 * b10 + a13 * b09) * d; o[1] = (a02 * b10 - a01 * b11 - a03 * b09) * d;
-      o[2] = (a31 * b05 - a32 * b04 + a33 * b03) * d; o[3] = (a22 * b04 - a21 * b05 - a23 * b03) * d;
-      o[4] = (a12 * b08 - a10 * b11 - a13 * b07) * d; o[5] = (a00 * b11 - a02 * b08 + a03 * b07) * d;
-      o[6] = (a32 * b02 - a30 * b05 - a33 * b01) * d; o[7] = (a20 * b05 - a22 * b02 + a23 * b01) * d;
-      o[8] = (a10 * b10 - a11 * b08 + a13 * b06) * d; o[9] = (a01 * b08 - a00 * b10 - a03 * b06) * d;
-      o[10] = (a30 * b04 - a31 * b02 + a33 * b00) * d; o[11] = (a21 * b02 - a20 * b04 - a23 * b00) * d;
-      o[12] = (a11 * b07 - a10 * b09 - a12 * b06) * d; o[13] = (a00 * b09 - a01 * b07 + a02 * b06) * d;
-      o[14] = (a31 * b01 - a30 * b03 - a32 * b00) * d; o[15] = (a20 * b03 - a21 * b01 + a22 * b00) * d;
-      return o;
-    },
   };
   const orbit = (yaw, pitch, d, c = [0, 0, 0]) => [c[0] + Math.sin(yaw) * Math.cos(pitch) * d, c[1] + Math.sin(pitch) * d, c[2] + Math.cos(yaw) * Math.cos(pitch) * d];
 
@@ -96,6 +86,8 @@
   const font = (px, w = 700) => (ctx.font = `${w} ${px}px ${FD}`);
   const mono = (px, w = 400) => (ctx.font = `${w} ${px}px ${FM}`);
   const serif = (px) => (ctx.font = `italic 400 ${px}px ${FS}`);
+  // Set a font, shrinking it until `str` fits in maxW.
+  function fit(set, px, str, maxW) { set(px); const w = ctx.measureText(str).width; if (w > maxW) set((px * maxW) / w); return w > maxW ? (px * maxW) / w : px; }
   function dot(x, y, r) { ctx.beginPath(); ctx.arc(x, y, Math.max(0, r), 0, TAU); }
   function reveal(str, x, y, size, p, align = 'left') {
     if (p <= 0) return;
@@ -127,25 +119,27 @@
   // A label pinned to a 3D point, with a leader tick.
   function pin(p, text, a, col = C.ink, dx = 14, dy = -14) {
     const [x, y, w] = project(p);
-    if (w <= 0 || a <= 0) return;
+    if (w <= 0 || a <= 0 || x < -50 || x > W + 50 || y < -50 || y > H + 50) return;
     ctx.globalAlpha = a;
     ctx.strokeStyle = 'rgba(243,240,232,.5)'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + dx, y + dy); ctx.lineTo(x + dx + 8, y + dy); ctx.stroke();
     ctx.fillStyle = C.lime; dot(x, y, 2.5); ctx.fill();
-    mono(13, 700); ctx.fillStyle = col; ctx.textAlign = 'left'; ctx.fillText(text, x + dx + 12, y + dy + 4);
+    mono(PORT ? 20 : 13, 700); ctx.fillStyle = col; ctx.textAlign = 'left'; ctx.fillText(text, x + dx + 12, y + dy + 4);
     ctx.globalAlpha = 1;
   }
 
   /* ---------- frame description ---------- */
-  function camera(f, eye, target, fov, roll = 0) {
+  // `shift` moves the image in NDC without changing perspective (to make room for UI).
+  function camera(f, eye, target, fov, roll = 0, shift = [0, 0]) {
+    eye = L3(target, eye, FRAME);
     let up = [0, 1, 0];
     if (roll) {
       const fw = norm(sub(target, eye)), c = Math.cos(roll), s = Math.sin(roll), k = cross(fw, up), d = dot3(fw, up);
       up = [up[0] * c + k[0] * s + fw[0] * d * (1 - c), up[1] * c + k[1] * s + fw[1] * d * (1 - c), up[2] * c + k[2] * s + fw[2] * d * (1 - c)];
     }
     const fy = (fov * Math.PI) / 180;
-    f.vp = M4.mul(M4.persp(fy, W / H, 0.05, 300), M4.look(eye, target, up));
-    f.invVP = M4.inv(f.vp); f.eye = eye; f.fov = fy;
+    f.vp = M4.mul(M4.t(shift[0], shift[1], 0), M4.mul(M4.persp(fy, W / H, 0.05, 400), M4.look(eye, target, up)));
+    f.eye = eye; f.target = target; f.up = up; f.fov = fy; f.shift = shift;
     f.focus = Math.hypot(...sub(target, eye));
     VP = f.vp;
   }
@@ -156,6 +150,29 @@
       particles: { a: I.DUST, b: I.DUST, mix: 0, spread: 0.6, turb: 0.8, ma: M4.id(), mb: M4.id(), size: 0.016, gain: 1 },
       post: { bloom: 0.9, threshold: 0.55, ca: 1.0, vig: 0.55, grain: 0.055, exposure: 1.15, fade: 0, flash: 0 },
     };
+  }
+  function layout() {
+    const ow = ov.width, oh = ov.height, land = ow >= oh;
+    SCALE = land ? Math.min(ow / 1920, oh / 1080) : ow / 1080;
+    W = ow / SCALE; H = oh / SCALE; PORT = !land;
+    M = PORT ? 64 : 84; TOP = PORT ? 270 : 150;
+    FRAME = Math.max(1, ((16 / 9) / (ow / oh)) * 0.8);
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, ow, oh);
+    ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+    ctx.globalAlpha = 1; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+  }
+  function submit(f) {
+    // a pulled-back camera packs the same particles into less screen: keep density even
+    f.particles.size *= Math.sqrt(FRAME); f.particles.gain /= Math.pow(FRAME, 0.9);
+    f.sprites.forEach((s) => { s[3] *= FRAME; });
+    if (glOK) {
+      const q = Math.min(1, 1920 / Math.max(ov.width, ov.height));
+      f.width = Math.max(2, Math.round(ov.width * q)); f.height = Math.max(2, Math.round(ov.height * q));
+      EN.render(f);
+    } else {
+      mono(20, 500); ctx.fillStyle = C.dim; ctx.textAlign = 'center';
+      ctx.fillText('This site is rendered live on the GPU and needs WebGL2.', W / 2, H / 2);
+    }
   }
 
   /* ================================================================
@@ -196,14 +213,16 @@
       ctx.strokeStyle = 'rgba(243,240,232,.22)'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, H); ctx.moveTo(0, sy); ctx.lineTo(W, sy); ctx.stroke();
       ctx.strokeStyle = C.lime; ctx.lineWidth = 2; ctx.strokeRect(sx - 18, sy - 18, 36, 36);
-      mono(15, 500); ctx.fillStyle = C.ink; ctx.textAlign = 'left';
-      ctx.fillText(`x ${tip.p[0].toFixed(1)}   y ${tip.p[1].toFixed(1)}`, sx + 32, sy - 32);
-      ctx.fillStyle = C.dim; ctx.fillText(`stroke ${Math.min(2, Math.max(1, tip.i + 1))}/2   particles ${Math.round(SH.N * P(lt, 0.3, 3.15)).toLocaleString('en-US')}`, sx + 32, sy - 8);
+      mono(PORT ? 22 : 15, 500); ctx.fillStyle = C.ink; ctx.textAlign = 'left';
+      const lx = sx + 32 + (PORT && sx > W * 0.5 ? -420 : 0);
+      ctx.fillText(`x ${tip.p[0].toFixed(1)}   y ${tip.p[1].toFixed(1)}`, lx, sy - 36);
+      ctx.fillStyle = C.dim; ctx.fillText(`stroke ${Math.min(2, Math.max(1, tip.i + 1))}/2   particles ${Math.round(SH.N * P(lt, 0.3, 3.15)).toLocaleString('en-US')}`, lx, sy - 8);
       ctx.globalAlpha = 1;
     }
-    ctx.globalAlpha = P(lt, 0.1, 0.5) * (1 - P(lt, 3.4, 3.8)); label('[ 00 ]  SIGNATURE', 960, 150, 'center');
+    ctx.globalAlpha = P(lt, 0.1, 0.5) * (1 - P(lt, 3.4, 3.8)); label('[ 00 ]  SIGNATURE', W / 2, TOP, 'center');
     ctx.globalAlpha = E.outCubic(P(lt, 1.0, 1.6)) * (1 - P(lt, 3.3, 3.7));
-    serif(48); ctx.fillStyle = C.ink; ctx.textAlign = 'center'; ctx.fillText('Every system starts as a sketch.', 960, 975);
+    fit(serif, 48, 'Every system starts as a sketch.', W - 2 * M); ctx.fillStyle = C.ink; ctx.textAlign = 'center';
+    ctx.fillText('Every system starts as a sketch.', W / 2, H - (PORT ? 200 : 105));
     ctx.globalAlpha = 1;
   }
 
@@ -212,10 +231,9 @@
    * ================================================================ */
   const HALO_M = M4.mul(M4.rx(1.18), M4.rz(0.25));
   function sIdentity(lt, t, f) {
-    const mv = E.inOutCubic(P(lt, 0.3, 1.5)), ex = E.inOutCubic(P(lt, 3.0, 3.8));
-    const tgt = [lerp(0, 2.5, mv) * (1 - ex), 0, 0];
+    const mv = E.inOutCubic(P(lt, 0.3, 1.5)), ex = E.inOutCubic(P(lt, 3.0, 3.8)), off = mv * (1 - ex);
     const ang = lerp(0, -0.35, mv) + lt * 0.04, dist = lerp(10.5, 11.5, mv) - 3 * ex;
-    camera(f, [tgt[0] + Math.sin(ang) * dist, 0.8, Math.cos(ang) * dist], tgt, 35);
+    camera(f, [Math.sin(ang) * dist, 0.8, Math.cos(ang) * dist], [0, 0, 0], 35, 0, PORT ? [0, 0.3 * off] : [-0.42 * off, 0]);
     f.aperture = 0.03;
     const pop = E.outBack(P(lt, 0, 0.55));
     const ry = -0.5 * E.outCubic(P(lt, 0, 1.3)) + 0.85 * E.inOutCubic(P(lt, 1.3, 3.1)) + E.inExpo(P(lt, 3.1, 3.9)) * TAU * 1.5;
@@ -230,28 +248,32 @@
 
     const wa = 1 - P(lt, 2.95, 3.3);
     if (wa <= 0) return;
-    const x0 = 930;
-    ctx.globalAlpha = P(lt, 1.0, 1.3) * wa; label('[ 01 ]  HSING-HAN WU, A.K.A.', x0, 405); ctx.globalAlpha = 1;
-    font(200); ctx.fillStyle = C.ink; ctx.textAlign = 'left';
+    const x0 = PORT ? M : W * 0.484, cy = PORT ? H * 0.66 : H / 2;
+    ctx.globalAlpha = P(lt, 1.0, 1.3) * wa; label('[ 01 ]  HSING-HAN WU, A.K.A.', x0, cy - 135); ctx.globalAlpha = 1;
+    const fs = fit(font, 200, 'XYPHUZ', W - x0 - M);
+    font(fs); ctx.fillStyle = C.ink; ctx.textAlign = 'left';
     glyphs('XYPHUZ', 8).g.forEach((c, i) => {
       const s = E.outBack(P(lt, 1.0 + i * 0.06, 1.45 + i * 0.06)) * (1 - E.inCubic(P(lt, 2.9 + i * 0.03, 3.15 + i * 0.03)));
       if (s <= 0.001) return;
-      ctx.save(); ctx.translate(x0 + c.x + c.w / 2, 540); ctx.scale(1, s); ctx.fillText(c.ch, -c.w / 2, 70); ctx.restore();
+      ctx.save(); ctx.translate(x0 + c.x + c.w / 2, cy); ctx.scale(1, s); ctx.fillText(c.ch, -c.w / 2, fs * 0.35); ctx.restore();
     });
     const words = ['enterprise systems.', 'cloud platforms.', 'fab-scale software.', 'for the long run.'];
     const sw = [1.5, 2.0, 2.5];
     let idx = 0; sw.forEach((s) => { if (lt >= s) idx++; });
     const tr = idx ? E.outExpo(P(lt, sw[idx - 1], sw[idx - 1] + 0.32)) : 1;
+    const ly = cy + 165;
     ctx.globalAlpha = E.outCubic(P(lt, 1.3, 1.6)) * wa;
-    serif(56); ctx.fillStyle = C.ink; ctx.fillText('builds ', x0, 705);
+    serif(56); ctx.fillStyle = C.ink; ctx.fillText('builds ', x0, ly);
     const px = x0 + ctx.measureText('builds ').width;
     font(54); ctx.fillStyle = C.lime;
-    ctx.save(); ctx.beginPath(); ctx.rect(px - 10, 650, 760, 72); ctx.clip();
-    if (idx > 0 && tr < 1) ctx.fillText(words[idx - 1], px, 705 - tr * 72);
-    ctx.fillText(words[idx], px, 705 + (1 - tr) * 72);
+    ctx.save(); ctx.beginPath(); ctx.rect(px - 10, ly - 55, W, 72); ctx.clip();
+    if (idx > 0 && tr < 1) ctx.fillText(words[idx - 1], px, ly - tr * 72);
+    ctx.fillText(words[idx], px, ly + (1 - tr) * 72);
     ctx.restore();
-    ctx.globalAlpha = wa; mono(17, 500); ctx.fillStyle = C.dim;
-    ctx.fillText(decode('SOFTWARE ARCHITECT · ENTERPRISE SYSTEMS · CLOUD INFRASTRUCTURE', P(lt, 1.0, 2.0), t), x0, 770);
+    ctx.globalAlpha = wa;
+    const roles = 'SOFTWARE ARCHITECT · ENTERPRISE SYSTEMS · CLOUD INFRASTRUCTURE';
+    fit((p) => mono(p, 500), 17, roles, W - x0 - M); ctx.fillStyle = C.dim;
+    ctx.fillText(decode(roles, P(lt, 1.0, 2.0), t), x0, ly + 65);
     ctx.globalAlpha = 1;
   }
 
@@ -272,12 +294,13 @@
       [2.3, '$ make release  →  v2.4.0'],
     ];
     ctx.globalAlpha = P(lt, 0.8, 1.1) * (1 - P(lt, 3.4, 3.7));
-    label('[ 02 ]  CODE', 84, 150);
-    mono(16, 500); ctx.textAlign = 'left';
+    label('[ 02 ]  CODE', M, TOP);
+    mono(PORT ? 22 : 16, 500); ctx.textAlign = 'left';
+    const lh = PORT ? 38 : 28, y0 = H - (PORT ? 330 : 220);
     lines.forEach(([tt, s], i) => {
       if (lt < tt) return;
       ctx.fillStyle = s[0] === '$' ? C.ink : C.lime;
-      ctx.fillText(s.slice(0, Math.ceil(P(lt, tt, tt + 0.3) * s.length)), 84, 860 + i * 28);
+      ctx.fillText(s.slice(0, Math.ceil(P(lt, tt, tt + 0.3) * s.length)), M, y0 + i * lh);
     });
     ctx.globalAlpha = 1;
   }
@@ -285,6 +308,10 @@
   /* ================================================================
    * 03 — SOFTWARE ARCHITECT: type reassembles into a live system
    * ================================================================ */
+  function archPins(a) {
+    SH.NODES.forEach((n, i) => pin(n.p, n.lab, a * (0.6 + 0.4 * hash(i, 9)), i === 2 ? C.lime : C.ink));
+    SH.LAYERS.forEach((l, li) => pin([-4.6, l.y * 2, 3.6], `L${li}  ${l.n}`, a * 0.8, C.blue, -10, 12));
+  }
   function sArch(lt, t, f) {
     const yaw = -0.9 + lt * 0.22, pitch = 0.5;
     let eye = orbit(yaw, pitch, 13.5), tgt = [0, -0.3, 0];
@@ -292,20 +319,20 @@
     const dv = E.inOutCubic(P(lt, 2.8, 3.8)), rush = E.inCubic(P(lt, 3.0, 3.98));
     tgt = L3(tgt, mid, dv);
     const away = norm(sub(eye, mid));
-    eye = L3(eye, [mid[0] + away[0] * 0.4, mid[1] + away[1] * 0.4, mid[2] + away[2] * 0.4], rush);
+    // the dive ignores FRAME: we want to end up inside the packet on every screen
+    eye = L3(eye, [mid[0] + away[0] * 0.4 / FRAME, mid[1] + away[1] * 0.4 / FRAME, mid[2] + away[2] * 0.4 / FRAME], rush);
     camera(f, eye, tgt, 38);
     f.aperture = lerp(0.03, 0.09, rush);
     Object.assign(f.particles, { a: I.TEXT, b: I.ARCH, mix: E.inOutCubic(P(lt, 0, 1.5)), spread: 0.9, turb: 0.9, size: 0.015 });
     f.post.ca = 1 + rush * 4;
 
-    const la = P(lt, 1.2, 1.6) * (1 - P(lt, 2.9, 3.2));
-    SH.NODES.forEach((n, i) => pin(n.p, n.lab, la * (0.6 + 0.4 * hash(i, 9)), i === 2 ? C.lime : C.ink));
-    SH.LAYERS.forEach((l, li) => pin([-4.6, l.y * 2, 3.6], `L${li}  ${l.n}`, la * 0.8, C.blue, -10, 12));
+    archPins(P(lt, 1.2, 1.6) * (1 - P(lt, 2.9, 3.2)));
     const ta = P(lt, 0.9, 1.2) * (1 - P(lt, 3.0, 3.3));
     if (ta > 0) {
-      ctx.globalAlpha = ta; label('[ 03 ]  SYSTEMS', 84, 150);
-      font(110); ctx.fillStyle = C.ink; reveal('SOFTWARE', 84, 880, 110, E.outExpo(P(lt, 0.9, 1.5)));
-      ctx.fillStyle = C.blue; reveal('ARCHITECT', 84, 985, 110, E.outExpo(P(lt, 1.0, 1.6)));
+      ctx.globalAlpha = ta; label('[ 03 ]  SYSTEMS', M, TOP);
+      const fs = fit(font, 110, 'ARCHITECT', W - 2 * M);
+      ctx.fillStyle = C.ink; reveal('SOFTWARE', M, H - (PORT ? 330 : 200), fs, E.outExpo(P(lt, 0.9, 1.5)));
+      ctx.fillStyle = C.blue; reveal('ARCHITECT', M, H - (PORT ? 225 : 95), fs, E.outExpo(P(lt, 1.0, 1.6)));
       ctx.globalAlpha = 1;
     }
   }
@@ -315,6 +342,18 @@
    * ================================================================ */
   const WAFER_TILT = -0.95;
   const fabEye = (lt) => orbit(0.75 + (lt - 2) * 0.12, 0.58, 12, [-1.2, 0.6, 0]);
+  function titleBlock(lt, t0, kicker, a, b, colB, line, tags) {
+    const ta = P(lt, t0, t0 + 0.3);
+    ctx.globalAlpha *= ta;
+    label(kicker, M, TOP);
+    const fs = fit(font, 96, a.length > b.length ? a : b, W - 2 * M);
+    ctx.fillStyle = C.ink; reveal(a, M, TOP + 100, fs, E.outExpo(P(lt, t0, t0 + 0.6)));
+    ctx.fillStyle = colB; reveal(b, M, TOP + 100 + fs * 0.98, fs, E.outExpo(P(lt, t0 + 0.1, t0 + 0.7)));
+    let y = TOP + 100 + fs * 0.98 + 60;
+    if (line) { fit(serif, 40, line, W - 2 * M); ctx.fillStyle = C.ink; ctx.textAlign = 'left'; ctx.fillText(line, M, y); y += 40; }
+    if (tags) { fit((p) => mono(p, 700), 14, tags, W - 2 * M); ctx.fillStyle = C.dim; ctx.fillText(tags, M, y); }
+    ctx.globalAlpha = 1;
+  }
   function sFab(lt, t, f) {
     if (lt < 2.0) {
       const d = lerp(2.4, 11, E.inOutCubic(P(lt, 0, 1.3)));
@@ -324,7 +363,7 @@
       const e2 = E.inOutCubic(P(lt, 2.0, 3.0)), rise = E.inOutCubic(P(lt, 3.3, 4.0));
       const eye = L3([0, 3, 11], fabEye(lt), e2);
       eye[1] += rise * 12;
-      camera(f, eye, [-1.2 * e2, 0.6 + rise * 11, 0], 40);
+      camera(f, eye, [-1.2 * e2, 0.6 + rise * 11, 0], 40, 0, PORT ? [0, -0.12 * e2] : [0, 0]);
       Object.assign(f.particles, { a: I.WAFER, b: I.FAB, ma: M4.rx(WAFER_TILT), mix: e2, spread: 0.8, turb: 1.2, scan: -5, gain: lerp(1, 1.8, e2) });
     }
     f.aperture = 0.03;
@@ -332,58 +371,54 @@
 
     const wl = P(lt, 0.9, 1.2) * (1 - P(lt, 1.8, 2.0));
     if (wl > 0) {
-      ctx.globalAlpha = wl; mono(15, 700); ctx.textAlign = 'center'; ctx.fillStyle = C.dim;
-      ctx.fillText(`WAFER 07  ·  300 mm  ·  YIELD MAP  ·  ${Math.round(P(lt, 0.7, 1.8) * 100)}% INSPECTED`, 960, 990);
+      const s = `WAFER 07  ·  300 mm  ·  YIELD MAP  ·  ${Math.round(P(lt, 0.7, 1.8) * 100)}% INSPECTED`;
+      ctx.globalAlpha = wl; fit((p) => mono(p, 700), PORT ? 22 : 15, s, W - 2 * M); ctx.textAlign = 'center'; ctx.fillStyle = C.dim;
+      ctx.fillText(s, W / 2, H - (PORT ? 200 : 90));
       ctx.globalAlpha = 1;
     }
-    if (lt < 0.8) { ctx.globalAlpha = P(lt, 0.1, 0.3) * (1 - P(lt, 0.6, 0.8)); label('[ 04 ]  ONE DIE', 960, 150, 'center'); ctx.globalAlpha = 1; }
-    const ta = P(lt, 2.4, 2.7) * (1 - P(lt, 3.4, 3.7));
-    if (ta > 0) {
-      ctx.globalAlpha = ta; label('[ 04 ]  GIGA-FAB SCALE', 84, 150);
-      font(96); ctx.fillStyle = C.ink; reveal('ENTERPRISE', 84, 250, 96, E.outExpo(P(lt, 2.4, 3.0)));
-      ctx.fillStyle = C.lime; reveal('SYSTEMS', 84, 345, 96, E.outExpo(P(lt, 2.5, 3.1)));
-      serif(40); ctx.fillStyle = C.ink; ctx.textAlign = 'left'; ctx.fillText('for giga-fab semiconductor manufacturing.', 84, 405);
-      mono(14, 700); ctx.fillStyle = C.dim; ctx.fillText('MES · DISPATCH · SCHEDULING · SPC · AMHS · 24/7', 84, 445);
-      ctx.globalAlpha = 1;
-    }
+    if (lt < 0.8) { ctx.globalAlpha = P(lt, 0.1, 0.3) * (1 - P(lt, 0.6, 0.8)); label('[ 04 ]  ONE DIE', W / 2, TOP, 'center'); ctx.globalAlpha = 1; }
+    ctx.globalAlpha = 1 - P(lt, 3.4, 3.7);
+    if (lt > 2.4) titleBlock(lt, 2.4, '[ 04 ]  GIGA-FAB SCALE', 'ENTERPRISE', 'SYSTEMS', C.lime, 'for giga-fab semiconductor manufacturing.', 'MES · DISPATCH · SCHEDULING · SPC · AMHS · 24/7');
+    ctx.globalAlpha = 1;
   }
 
   /* ================================================================
    * 05 — CLOUD INFRASTRUCTURE: the planet, failover, healing
    * ================================================================ */
   const FAIL_ID = 2;
+  function regionPins(spin, eye, a, fail) {
+    SH.REGIONS.forEach((rg, i) => {
+      const d = SH.dirOf(...rg), p = M4.apply(spin, [d[0] * SH.GR * 1.04, d[1] * SH.GR * 1.04, d[2] * SH.GR * 1.04]);
+      const facing = dot3(norm(p), norm(sub(eye, p)));
+      const down = i === FAIL_ID && fail > 0.5;
+      pin(p, down ? `region-${i + 1}  ✗ DOWN` : `region-${i + 1}`, a * clamp(facing * 3), down ? C.coral : C.ink);
+    });
+  }
   function sCloud(lt, t, f) {
+    const cen = PORT ? [0, 0, 0] : [-3.6, 0, 0];
     const start = fabEye(4); start[1] += 12;
     const a = 0.3 + lt * 0.1, e = E.inOutCubic(P(lt, 0, 1.5));
     const push = E.inExpo(P(lt, 3.4, 4.0));
-    const eye = L3(L3(start, orbit(a, 0.18, 19.5, [-3.6, 0, 0]), e), [0, 0, 5], push);
-    camera(f, eye, L3([0, 11.6, 0], [-3.6, 0, 0], e), 38);
+    const eye = L3(L3(start, orbit(a, 0.18, 19.5, cen), e), [0, 0, 5 / FRAME], push);
+    camera(f, eye, L3([0, 11.6, 0], cen, e), 38, 0, PORT ? [0, -0.18 * e] : [0, 0]);
     f.aperture = 0.01;
     const spin = M4.ry(0.6 + lt * 0.22);
     const fail = P(lt, 2.2, 2.35) * (1 - P(lt, 3.0, 3.4));
     Object.assign(f.particles, { a: I.FAB, b: I.GLOBE, mix: E.inOutCubic(P(lt, 0, 1.4)), spread: 0.9, turb: 1.3, mb: spin, fail, failId: FAIL_ID });
     f.bg.stars = 0.5;
 
-    const ra = P(lt, 1.3, 1.6) * (1 - push);
-    SH.REGIONS.forEach((rg, i) => {
-      const d = SH.dirOf(...rg), p = M4.apply(spin, [d[0] * SH.GR * 1.04, d[1] * SH.GR * 1.04, d[2] * SH.GR * 1.04]);
-      const facing = dot3(norm(p), norm(sub(eye, p)));
-      const down = i === FAIL_ID && fail > 0.5;
-      pin(p, down ? `region-${i + 1}  ✗ DOWN` : `region-${i + 1}`, ra * clamp(facing * 3), down ? C.coral : C.ink);
-    });
-    const ta = 1 - push;
-    ctx.globalAlpha = P(lt, 0.4, 0.7) * ta; label('[ 05 ]  CLOUD', 84, 150);
-    font(96); ctx.fillStyle = C.ink; reveal('CLOUD', 84, 250, 96, E.outExpo(P(lt, 0.4, 1.0)) * ta);
-    ctx.fillStyle = C.blue; reveal('INFRASTRUCTURE', 84, 345, 96, E.outExpo(P(lt, 0.5, 1.1)) * ta);
-    ctx.globalAlpha = 1;
+    regionPins(spin, f.eye, P(lt, 1.3, 1.6) * (1 - push), fail);
+    ctx.globalAlpha = 1 - push;
+    if (lt > 0.4) titleBlock(lt, 0.4, '[ 05 ]  CLOUD', 'CLOUD', 'INFRASTRUCTURE', C.blue);
     const logs = [
       [0.9, '$ terraform apply  ·  6 regions', C.dim], [1.3, '✓ mesh up  ·  12 routes', C.lime], [1.8, 'p99 38 ms  ·  error rate 0.00%', C.ink],
       [2.2, '✗ region-3 unreachable', C.coral], [2.45, '↻ failover → region-2, region-5', C.ink], [3.0, '✓ recovered  ·  zero downtime', C.lime],
     ];
-    ctx.globalAlpha = ta; mono(15, 500); ctx.textAlign = 'left';
+    ctx.globalAlpha = 1 - push; mono(PORT ? 22 : 15, 500); ctx.textAlign = 'left';
+    const lh = PORT ? 40 : 30, y0 = H - (PORT ? 420 : 280);
     logs.forEach(([tt, s, col], i) => {
       if (lt < tt) return;
-      ctx.fillStyle = col; ctx.fillText(s.slice(0, Math.ceil(P(lt, tt, tt + 0.25) * s.length)), 84, 800 + i * 30);
+      ctx.fillStyle = col; ctx.fillText(s.slice(0, Math.ceil(P(lt, tt, tt + 0.25) * s.length)), M, y0 + i * lh);
     });
     ctx.globalAlpha = 1;
   }
@@ -396,12 +431,10 @@
   const WCOL = [C.lime, C.ink, C.coral, C.lime, C.blue, C.lime, C.ink];
   function sManifesto(lt, t, f) {
     let i = 0; WT.forEach((w, k) => { if (lt >= w - 0.0001) i = k; });
-    const next = lt < WT[0] ? 0 : Math.min(i + 1, WT.length - 1);
     const landed = lt >= WT[0];
-    // morph window into the next word, ending exactly on its beat
-    const tgt = lt < WT[0] ? 0 : next;
+    const tgt = landed ? Math.min(i + 1, WT.length - 1) : 0;
     const win = tgt > 0 ? Math.min(0.32, (WT[tgt] - WT[tgt - 1]) * 0.85) : 0.45;
-    const from = lt < WT[0] ? I.GLOBE : I.WORD + i, to = I.WORD + tgt;
+    const from = landed ? I.WORD + i : I.GLOBE, to = I.WORD + tgt;
     const mix = tgt === i && landed ? 1 : E.inOutCubic(P(lt, WT[tgt] - win, WT[tgt]));
     const hit = WT.reduce((m, w) => (lt >= w ? Math.max(m, Math.exp(-(lt - w) * 9)) : m), 0);
 
@@ -410,51 +443,55 @@
     camera(f, [Math.sin(lt * 0.6) * 1.2, Math.cos(lt * 0.5) * 0.5, dolly], [0, 0, 0], 42 - hit * 7, roll);
     f.aperture = 0.012;
     Object.assign(f.particles, {
-      a: from, b: to, ma: lt < WT[0] ? M4.ry(0.6 + 4 * 0.22) : M4.id(), mix, spread: 0.45, turb: 1.4, burst: 1.1,
+      a: from, b: to, ma: landed ? M4.id() : M4.ry(0.6 + 4 * 0.22), mix, spread: 0.45, turb: 1.4, burst: 1.1,
       size: 0.016, gain: lerp(1.2, 1.5, hit),
     });
     f.post.ca = 1.4 + hit * 6; f.post.bloom = 0.95 + hit * 0.6; f.post.threshold = 0.62;
     f.post.flash = Math.max(f.post.flash, 0.45 * Math.pow(1 - P(lt, 0, 0.3), 2));
 
-    label('[ 06 ]  MANIFESTO', 960, 150, 'center');
+    label('[ 06 ]  MANIFESTO', W / 2, TOP, 'center');
     if (!landed) return;
     const wl = lt - WT[i];
-    const sub = SUBS[i], ta = E.outCubic(P(wl, 0.04, 0.16)) * (tgt !== i ? 1 - P(lt, WT[tgt] - win, WT[tgt] - win + 0.08) : 1);
+    const s = SUBS[i], ta = E.outCubic(P(wl, 0.04, 0.16)) * (tgt !== i ? 1 - P(lt, WT[tgt] - win, WT[tgt] - win + 0.08) : 1);
+    const y = PORT ? H * 0.62 : H * 0.73;
     ctx.globalAlpha = ta;
-    serif(46); ctx.fillStyle = C.ink; ctx.textAlign = 'center';
-    ctx.fillText(sub.slice(0, Math.ceil(P(wl, 0.04, 0.2) * sub.length)), 960, 790);
-    mono(16, 700); ctx.fillStyle = WCOL[i];
-    ctx.fillText(`${pad(i + 1)} / ${pad(WT.length)}   ${SH.WORDS[i]}`, 960, 850);
+    fit(serif, 46, s, W - 2 * M); ctx.fillStyle = C.ink; ctx.textAlign = 'center';
+    ctx.fillText(s.slice(0, Math.ceil(P(wl, 0.04, 0.2) * s.length)), W / 2, y);
+    mono(PORT ? 22 : 16, 700); ctx.fillStyle = WCOL[i];
+    ctx.fillText(`${pad(i + 1)} / ${pad(WT.length)}   ${SH.WORDS[i]}`, W / 2, y + 60);
     ctx.globalAlpha = 1;
   }
 
   /* ================================================================
-   * 07 — XYPHUZ: the particles come home
+   * 07 — XYPHUZ: the particles come home (and hand over to the site)
    * ================================================================ */
+  const signSway = (c) => 0.45 * Math.sin(c * 1.1) - 0.3;
+  const signM = (c) => M4.mul(M4.mul(M4.t(0, 1.05, 0), M4.ry(signSway(c))), M4.s(0.8));
+  const signMark = (c, alpha) => ({ pos: [0, 1.05, 0], rot: M4.m3(M4.ry(signSway(c))), scale: SH.SIGN_SCALE * 0.8, thick: 0.13, emit: 0, sweep: 1.4 - 2.6 * fract((c - 3) / 7), alpha, color: LIME });
   function sOutro(lt, t, f) {
-    camera(f, [Math.sin(lt * 0.15) * 1.2, 0.5, 11.5], [0, 0.5, 0], 35);
+    const pz = PORT ? 0.72 : 1; // phones: closer on the mark, it's the hero of the last shot
+    camera(f, [Math.sin(lt * 0.15) * 1.2 * pz, 0.5, 11.5 * pz], [0, 0.5, 0], 35, 0, PORT ? [0, 0.22] : [0, 0]);
     f.aperture = 0.025;
-    const sway = 0.45 * Math.sin(lt * 1.1) - 0.3;
-    const m = M4.mul(M4.mul(M4.t(0, 1.05, 0), M4.ry(sway)), M4.s(0.8));
-    Object.assign(f.particles, { a: I.WORD + WT.length - 1, b: I.SIGN, mix: E.inOutCubic(P(lt, 0, 1.3)), spread: 0.8, turb: 1.4, mb: M4.mul(m, M4.s(1.04)), gain: lerp(1, 0.16, P(lt, 0.6, 1.6)) });
-    f.mark = { pos: [0, 1.05, 0], rot: M4.m3(M4.ry(sway)), scale: SH.SIGN_SCALE * 0.8, thick: 0.13, emit: 0, sweep: lerp(-1.2, 1.4, P(lt, 1.0, 2.8)), alpha: E.outCubic(P(lt, 0.9, 1.6)), color: LIME };
+    Object.assign(f.particles, { a: I.WORD + WT.length - 1, b: I.SIGN, mix: E.inOutCubic(P(lt, 0, 1.3)), spread: 0.8, turb: 1.4, mb: M4.mul(signM(lt), M4.s(1.04)), gain: lerp(1, 0.16, P(lt, 0.6, 1.6)) });
+    f.mark = signMark(lt, E.outCubic(P(lt, 0.9, 1.6)));
+    f.mark.sweep = lerp(-1.2, 1.4, P(lt, 1.0, 2.8));
     f.bg.cone = 0.7; f.bg.coneCol = [0.2, 0.24, 0.13];
     f.post.flash = 0.75 * Math.pow(1 - P(lt, 0, 0.35), 2);
-    f.post.fade = P(lt, 2.55, 2.95);
 
-    font(110);
+    const out = 1 - P(lt, 2.45, 2.9); // the site's own UI takes over from here
+    const y0 = PORT ? H * 0.64 : H * 0.755;
     const tr = lerp(80, 24, E.outExpo(P(lt, 0.5, 1.6)));
-    const { g, w } = glyphs('XYPHUZ', tr);
-    ctx.globalAlpha = E.outCubic(P(lt, 0.5, 0.9)) * (1 - f.post.fade); ctx.fillStyle = C.ink; ctx.textAlign = 'left';
-    g.forEach((c) => ctx.fillText(c.ch, 960 - w / 2 + c.x, 815));
-    ctx.globalAlpha = 1 - f.post.fade;
-    mono(19, 500); ctx.fillStyle = C.dim; ctx.textAlign = 'center';
-    ctx.fillText(decode('SOFTWARE ARCHITECT  /  ENTERPRISE SYSTEMS  /  CLOUD INFRASTRUCTURE', P(lt, 0.8, 1.6), t), 960, 862);
-    const ta = E.outCubic(P(lt, 1.2, 1.7));
-    ctx.globalAlpha = ta * (1 - f.post.fade); serif(40); ctx.fillStyle = C.ink;
-    ctx.fillText('Started in motion design. Now I build what doesn’t fall over.', 960, 915 + (1 - ta) * 16);
-    ctx.globalAlpha = P(lt, 1.5, 2.0) * (1 - f.post.fade); mono(17, 700); ctx.fillStyle = C.lime;
-    ctx.fillText('xyphuz.com   ·   github.com/wst24365888', 960, 962);
+    font(110); let gl = glyphs('XYPHUZ', tr);
+    if (gl.w > W - 2 * M) { font((110 * (W - 2 * M)) / gl.w); gl = glyphs('XYPHUZ', (tr * (W - 2 * M)) / gl.w); }
+    ctx.globalAlpha = E.outCubic(P(lt, 0.5, 0.9)) * out; ctx.fillStyle = C.ink; ctx.textAlign = 'left';
+    gl.g.forEach((c) => ctx.fillText(c.ch, W / 2 - gl.w / 2 + c.x, y0));
+    ctx.globalAlpha = out;
+    const roles = 'SOFTWARE ARCHITECT  /  ENTERPRISE SYSTEMS  /  CLOUD INFRASTRUCTURE';
+    fit((p) => mono(p, 500), PORT ? 24 : 19, roles, W - 2 * M); ctx.fillStyle = C.dim; ctx.textAlign = 'center';
+    ctx.fillText(decode(roles, P(lt, 0.8, 1.6), t), W / 2, y0 + 47);
+    const ta = E.outCubic(P(lt, 1.2, 1.7)), line = 'Started in motion design. Now I build what doesn’t fall over.';
+    ctx.globalAlpha = ta * out; fit(serif, 40, line, W - 2 * M); ctx.fillStyle = C.ink;
+    ctx.fillText(line, W / 2, y0 + 100 + (1 - ta) * 16);
     ctx.globalAlpha = 1;
   }
 
@@ -469,52 +506,99 @@
     { s: 27, e: 30, id: '07', name: 'XYPHUZ', draw: sOutro },
   ];
 
-  function hud(t, sc) {
-    ctx.save();
-    ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 2;
-    const m = 44, L = 26;
+  function corners(a) {
+    const m = PORT ? 28 : 44, L = PORT ? 40 : 26;
+    ctx.save(); ctx.globalAlpha = a;
+    ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = PORT ? 3 : 2;
     ctx.beginPath();
     ctx.moveTo(m, m + L); ctx.lineTo(m, m); ctx.lineTo(m + L, m);
     ctx.moveTo(W - m - L, m); ctx.lineTo(W - m, m); ctx.lineTo(W - m, m + L);
     ctx.moveTo(m, H - m - L); ctx.lineTo(m, H - m); ctx.lineTo(m + L, H - m);
     ctx.moveTo(W - m - L, H - m); ctx.lineTo(W - m, H - m); ctx.lineTo(W - m, H - m - L);
-    ctx.stroke();
-    mono(16, 500);
-    ctx.textAlign = 'left'; ctx.fillText('XYPHUZ — SHOWREEL 2026', 84, 88);
-    ctx.fillText(`${sc.id} / ${sc.name}`, 84, 1030);
+    ctx.stroke(); ctx.restore();
+  }
+  function hud(t, sc) {
+    corners(1);
+    ctx.save();
+    mono(PORT ? 22 : 16, 500); ctx.fillStyle = 'rgba(255,255,255,.7)';
+    const y = H - (PORT ? 90 : 60);
+    ctx.textAlign = 'left'; ctx.fillText(`${sc.id} / ${sc.name}`, M, y);
     ctx.textAlign = 'right';
     const tc = `00:00:${pad(Math.floor(t))}:${pad(Math.floor(fract(t) * 24))}`;
-    ctx.fillText(tc, W - 84, 88);
-    ctx.fillText(`${SH.N.toLocaleString('en-US')} PARTICLES · WEBGL2 · 120 BPM`, W - 84, 1030);
+    ctx.fillText(tc, W - M, y);
     const tw = ctx.measureText(tc).width;
-    if (Math.floor(t * 2) % 2 === 0) { ctx.fillStyle = '#ff2d2d'; dot(W - 84 - tw - 20, 82, 7); ctx.fill(); }
+    if (Math.floor(t * 2) % 2 === 0) { ctx.fillStyle = '#ff2d2d'; dot(W - M - tw - 20, y - 6, 7); ctx.fill(); }
     ctx.restore();
   }
 
   const FLASHES = [[4, 0.85]];
 
   function render(t) {
-    t = ((t % DUR) + DUR) % DUR;
+    t = clamp(t, 0, DUR - 1e-4);
+    layout();
     const sc = SCENES.find((s) => t >= s.s && t < s.e) || SCENES[SCENES.length - 1];
-    const lt = t - sc.s;
-    const k = ov.width / W;
-    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, ov.width, ov.height);
-    ctx.setTransform(k, 0, 0, k, 0, 0);
-    ctx.globalAlpha = 1; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
-
     const f = base(t);
-    sc.draw(lt, t, f);
+    sc.draw(t - sc.s, t, f);
     for (const [ft, a] of FLASHES) if (t >= ft && t < ft + 0.4) f.post.flash = Math.max(f.post.flash, a * Math.pow(1 - P(t, ft, ft + 0.4), 2));
-    if (glOK) {
-      const q = Math.min(1, 1920 / ov.width);
-      f.width = Math.max(2, Math.round(ov.width * q)); f.height = Math.max(2, Math.round(ov.height * q));
-      EN.render(f);
-    } else {
-      mono(20, 500); ctx.fillStyle = C.dim; ctx.textAlign = 'center';
-      ctx.fillText('This reel is rendered live on the GPU and needs WebGL2.', 960, 540);
-    }
+    submit(f);
     ctx.globalAlpha = 1;
     hud(t, sc);
+  }
+
+  /* ================================================================
+   * HOME — the reel's last frame, made interactive
+   * ================================================================ */
+  // The first entry matches the outro's final camera exactly, so the handoff is seamless.
+  const HOME = [
+    { id: 'xyphuz', shape: I.SIGN, target: [0, 0.5, 0], yaw: 0.045, pitch: 0, dist: 11.51, fov: 35, gain: 0.16, mark: true },
+    { id: 'engineer', shape: I.TEXT, target: [0, 0.2, 0], yaw: -0.15, pitch: 0.08, dist: 15.5, fov: 40, gain: 1.5 },
+    { id: 'architect', shape: I.ARCH, target: [0, -0.3, 0], yaw: -0.55, pitch: 0.5, dist: 16.5, fov: 38, gain: 1.0 },
+    { id: 'enterprise', shape: I.FAB, target: [-1.2, 0.6, 0], yaw: 0.75, pitch: 0.58, dist: 12.5, fov: 40, gain: 1.8 },
+    { id: 'cloud', shape: I.GLOBE, target: [0, 0, 0], yaw: 0.3, pitch: 0.18, dist: 15, fov: 38, gain: 1.0 },
+  ];
+  const GATE = { shape: I.DUST, target: [0, 0, -3], yaw: 0, pitch: 0.12, dist: 16, fov: 40, gain: 1.15 };
+  const formM = (h, c) => (h.shape === I.SIGN ? M4.mul(signM(c), M4.s(1.04)) : h.shape === I.GLOBE ? M4.ry(0.6 + c * 0.22) : h.shape === I.DUST ? M4.ry(c * 0.03) : M4.id());
+
+  /* state: { cur, prev, since, clock, yaw, pitch, mouse: [x, y] (NDC), force, ui (0–1), flash, gate } */
+  function renderHome(st) {
+    layout();
+    const c = st.clock;
+    const A = st.gate ? GATE : HOME[st.prev], B = st.gate ? GATE : HOME[st.cur];
+    const e = E.inOutCubic(P(st.since, 0, 1.4));
+    const yaw = lerp(A.yaw, B.yaw, e) + st.yaw + (st.still ? 0 : (c - 3) * 0.03);
+    const pitch = clamp(lerp(A.pitch, B.pitch, e) + st.pitch, -0.35, 1.25);
+    const tgt = L3(A.target, B.target, e);
+    const shift = st.gate ? [0, 0] : PORT ? [0, 0.22 + 0.14 * st.ui] : [0.3 * st.ui, 0.02 * st.ui];
+    const f = base(c);
+    const pz = PORT && !st.gate ? lerp(A.mark ? 0.72 : 1, B.mark ? 0.72 : 1, e) : 1;
+    camera(f, orbit(yaw, pitch, lerp(A.dist, B.dist, e) * pz, tgt), tgt, lerp(A.fov, B.fov, e), 0, shift);
+    f.aperture = 0.02;
+    Object.assign(f.particles, { a: A.shape, b: B.shape, ma: formM(A, c), mb: formM(B, c), mix: P(st.since, 0, 1.4), spread: 0.8, turb: 1.2, gain: lerp(A.gain, B.gain, e) });
+    if (B.shape === I.GLOBE || A.shape === I.GLOBE) Object.assign(f.particles, { fail: 0, failId: -1 });
+    if (B.shape === I.FAB || A.shape === I.FAB) f.particles.scan = -5;
+
+    // the cursor, as a point in the world on the plane through the target
+    const fw = norm(sub(tgt, f.eye)), rt = norm(cross(fw, f.up)), up = cross(rt, fw), th = Math.tan(f.fov / 2);
+    const dir = norm([
+      fw[0] + rt[0] * (st.mouse[0] - shift[0]) * th * (W / H) + up[0] * (st.mouse[1] - shift[1]) * th,
+      fw[1] + rt[1] * (st.mouse[0] - shift[0]) * th * (W / H) + up[1] * (st.mouse[1] - shift[1]) * th,
+      fw[2] + rt[2] * (st.mouse[0] - shift[0]) * th * (W / H) + up[2] * (st.mouse[1] - shift[1]) * th,
+    ]);
+    const k = dot3(sub(tgt, f.eye), fw) / Math.max(1e-3, dot3(dir, fw));
+    f.mouse = { p: [f.eye[0] + dir[0] * k, f.eye[1] + dir[1] * k, f.eye[2] + dir[2] * k], r: f.focus * 0.12, f: st.force };
+
+    const markA = (A.mark ? 1 - P(st.since, 0, 0.5) : 0) + (B.mark ? P(st.since, 0.6, 1.4) : 0);
+    if (markA > 0.001 && !st.gate) f.mark = signMark(c, Math.min(1, A.mark && B.mark ? 1 : markA));
+    f.bg.cone = (A.mark ? 1 - e : 0) * 0.7 + (B.mark ? e : 0) * 0.7; f.bg.coneCol = [0.2, 0.24, 0.13];
+    f.bg.stars = 0.4;
+    f.post.flash = st.flash || 0;
+    submit(f);
+
+    if (st.gate) return;
+    const pa = P(st.since, 1.2, 1.8) * st.ui;
+    if (B.id === 'architect') archPins(pa);
+    if (B.id === 'cloud') regionPins(formM(B, c), f.eye, pa, 0);
+    corners(0.6 * st.ui);
   }
 
   async function ready() {
@@ -528,10 +612,12 @@
   window.Reel = {
     DUR,
     SCENES: SCENES.map(({ s, e, id, name }) => ({ s, e, id, name })),
+    HOME: HOME.map((h) => h.id),
+    get gl() { return glOK; },
     create(glCanvas, overlay) {
       glc = glCanvas; ov = overlay; ctx = ov.getContext('2d');
       glOK = EN.init(glc);
-      return { render, ready };
+      return { render, renderHome, ready };
     },
   };
 })();

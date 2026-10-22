@@ -43,7 +43,7 @@ precision highp sampler2D;
 uniform sampler2D uPA, uFA, uPB, uFB;
 uniform mat4 uVP, uMA, uMB;
 uniform float uMix, uSpread, uTurb, uTime, uSignT, uSignMode, uScan, uFail, uFailId, uPull, uSize, uFocal, uFocus, uAperture, uGain, uBurst;
-uniform vec3 uPullC;
+uniform vec3 uPullC, uMouse; uniform float uMouseR, uMouseF;
 out vec3 vCol; out float vA; out float vSoft;
 const int SIDE = ${SIDE};
 float h1(float n) { return fract(sin(n * 127.1) * 43758.5453); }
@@ -115,8 +115,11 @@ void main() {
   p.xy *= 1.0 + arc * uBurst * (0.6 + seed);   // between words: blow outward…
   p.z += arc * uBurst * (3.0 + seed * 9.0);     // …and toward the lens
   p = mix(p, uPullC, clamp(uPull * (0.55 + seed * 0.9), 0.0, 1.0));
-  vec3 col = mix(cA, cB, e) + vec3(0.3) * arc;
-  float bri = mix(bA, bB, e) * (1.0 + arc * 0.5);
+  vec3 dm = p - uMouse;                          // the cursor pushes particles away
+  float mk = exp(-dot(dm, dm) / (uMouseR * uMouseR)) * uMouseF;
+  p += dm / (length(dm) + 0.05) * (mk / (1.0 + mk * 0.4)) * uMouseR * (0.6 + seed * 0.8);
+  vec3 col = mix(mix(cA, cB, e) + vec3(0.3) * arc, vec3(0.83, 1.0, 0.23), clamp(mk, 0.0, 0.6));
+  float bri = mix(bA, bB, e) * (1.0 + arc * 0.5) * (1.0 + min(mk, 1.0) * 0.8);
   vec4 clip = uVP * vec4(p, 1.0);
   gl_Position = clip;
   float depth = max(clip.w, 0.05);
@@ -407,6 +410,8 @@ void main() {
       f1('uSignT', p.signT || 0); f1('uSignMode', p.signMode || 0); f1('uScan', p.scan == null ? 99 : p.scan);
       f1('uFail', p.fail || 0); f1('uFailId', p.failId == null ? -1 : p.failId);
       f1('uPull', p.pull || 0); f3('uPullC', p.pullC || [0, 0, 0]); f1('uBurst', p.burst || 0);
+      const mo = f.mouse || { p: [0, 0, 0], r: 1, f: 0 };
+      f3('uMouse', mo.p); f1('uMouseR', Math.max(0.01, mo.r)); f1('uMouseF', mo.f);
       f1('uSize', p.size); f1('uFocal', focal); f1('uFocus', f.focus); f1('uAperture', f.aperture); f1('uGain', p.gain);
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.depthMask(false);
       gl.bindVertexArray(vaoEmpty);

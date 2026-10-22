@@ -7,7 +7,7 @@
   'use strict';
 
   const DUR = 30;
-  let ac = null, comp, master, verb, noise, bus = null, cursor = 0, muted = false;
+  let ac = null, comp, master, verb, noise, bus = null, cursor = 0, muted = false, ambT = null;
   const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
 
   function init() {
@@ -245,6 +245,24 @@
         }
       }
       cursor = ahead;
+    },
+    // Interface sounds for the interactive site.
+    ui(kind) {
+      if (!ac || muted) return;
+      if (!bus) newBus();
+      const w = ac.currentTime + 0.01;
+      if (kind === 'hover') I.blip(w, 2600, 0.018, 0.03);
+      else if (kind === 'scatter') { I.whoosh(w, 0.35, 0.1); I.pluck(w, 88, 0.035); }
+      else { I.pluck(w, 81, 0.05); I.pluck(w + 0.06, 88, 0.035); }
+    },
+    // A slow pad that keeps breathing under the site after the reel ends.
+    ambient(on) {
+      clearInterval(ambT); ambT = null;
+      if (!on || !ac) return;
+      const chords = [[45, 52, 57, 64], [41, 48, 57, 64], [48, 55, 60, 67], [43, 50, 59, 62]];
+      let k = 0;
+      const play = () => { if (muted) return; if (!bus) newBus(); I.pad(ac.currentTime + 0.05, chords[k++ % 4], 3.6, 0.022); };
+      play(); ambT = setInterval(play, 4000);
     },
   };
 })();
