@@ -9,7 +9,7 @@
  * the halo collapses and detonates into volumetric type → a live system
  * architecture → a dive into one packet that lands as a die on a wafer → the
  * fab floor → event streams rise into a planet-scale cloud that fails over and
- * heals → warp → the signature again.
+ * heals → a manifesto the particles spell word by word → the signature again.
  */
 (function () {
   'use strict';
@@ -389,35 +389,43 @@
   }
 
   /* ================================================================
-   * 06 — MANIFESTO: warp, one word per beat
+   * 06 — MANIFESTO: every particle re-forms each word, on the beat
    * ================================================================ */
-  const WORDS = ['DESIGN', 'BUILD', 'SCALE', 'AUTOMATE', 'OBSERVE', 'HARDEN', 'SHIP', 'REPEAT'];
-  const WT = [0, 0.5, 1.0, 1.5, 2.0, 2.25, 2.5, 2.75];
+  const WT = [0.5, 1.0, 1.5, 2.0, 2.25, 2.5, 2.75];
+  const SUBS = ['systems before syntax.', 'the boring parts, done well.', 'from one tool to the whole fab.', 'humans out of the loop.', 'fail over, never fall over.', 'small, every day.', 'forever.'];
+  const WCOL = [C.lime, C.ink, C.coral, C.lime, C.blue, C.lime, C.ink];
   function sManifesto(lt, t, f) {
-    const roll = lt * 0.35 + Math.sin(lt * 1.3) * 0.15;
-    camera(f, [0, 0, 6], [0, 0, -10], lerp(50, 78, E.inCubic(P(lt, 0, 3))), roll);
-    f.aperture = 0.004;
-    Object.assign(f.particles, { a: I.GLOBE, b: I.TUNNEL, ma: M4.ry(0.6 + 4 * 0.22), mix: E.inOutCubic(P(lt, 0, 0.7)), spread: 0.6, turb: 2.2, size: 0.028, gain: 2.2 });
-    f.post.ca = 3.5; f.post.bloom = 1.2;
-    f.post.flash = 0.4 * Math.pow(1 - P(lt, 0, 0.3), 2);
+    let i = 0; WT.forEach((w, k) => { if (lt >= w - 0.0001) i = k; });
+    const next = lt < WT[0] ? 0 : Math.min(i + 1, WT.length - 1);
+    const landed = lt >= WT[0];
+    // morph window into the next word, ending exactly on its beat
+    const tgt = lt < WT[0] ? 0 : next;
+    const win = tgt > 0 ? Math.min(0.32, (WT[tgt] - WT[tgt - 1]) * 0.85) : 0.45;
+    const from = lt < WT[0] ? I.GLOBE : I.WORD + i, to = I.WORD + tgt;
+    const mix = tgt === i && landed ? 1 : E.inOutCubic(P(lt, WT[tgt] - win, WT[tgt]));
+    const hit = WT.reduce((m, w) => (lt >= w ? Math.max(m, Math.exp(-(lt - w) * 9)) : m), 0);
 
-    let i = 0; WT.forEach((w, k) => { if (lt >= w) i = k; });
-    const wl = lt - WT[i], word = WORDS[i];
-    font(400);
-    const size = Math.min(330, (400 * 1500) / ctx.measureText(word).width);
-    const punch = 1 + 0.18 * (1 - E.outExpo(P(wl, 0, 0.25)));
-    const gl = 18 * (1 - E.outExpo(P(wl, 0, 0.2)));
-    ctx.save(); ctx.translate(960, 560); ctx.rotate(-roll * 0.25); ctx.scale(punch, punch);
-    font(size); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.fillStyle = 'rgba(255,40,80,.85)'; ctx.fillText(word, -gl, 0);
-    ctx.fillStyle = 'rgba(40,220,255,.85)'; ctx.fillText(word, gl, 0);
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = i % 3 === 0 ? C.lime : C.ink; ctx.fillText(word, 0, 0);
-    ctx.restore();
-    ctx.textBaseline = 'alphabetic';
+    const dolly = lerp(17, 12.5, E.inOutCubic(P(lt, 0, 3))) - hit * 0.8;
+    const roll = Math.sin(lt * 1.7) * 0.06 + (i % 2 ? 0.03 : -0.03) * hit;
+    camera(f, [Math.sin(lt * 0.6) * 1.2, Math.cos(lt * 0.5) * 0.5, dolly], [0, 0, 0], 42 - hit * 7, roll);
+    f.aperture = 0.012;
+    Object.assign(f.particles, {
+      a: from, b: to, ma: lt < WT[0] ? M4.ry(0.6 + 4 * 0.22) : M4.id(), mix, spread: 0.45, turb: 1.4, burst: 1.1,
+      size: 0.016, gain: lerp(1.2, 1.5, hit),
+    });
+    f.post.ca = 1.4 + hit * 6; f.post.bloom = 0.95 + hit * 0.6; f.post.threshold = 0.62;
+    f.post.flash = Math.max(f.post.flash, 0.45 * Math.pow(1 - P(lt, 0, 0.3), 2));
+
     label('[ 06 ]  MANIFESTO', 960, 150, 'center');
-    mono(18, 700); ctx.fillStyle = C.ink; ctx.textAlign = 'center'; ctx.fillText(`${pad(i + 1)} / ${WORDS.length}`, 960, 940);
+    if (!landed) return;
+    const wl = lt - WT[i];
+    const sub = SUBS[i], ta = E.outCubic(P(wl, 0.04, 0.16)) * (tgt !== i ? 1 - P(lt, WT[tgt] - win, WT[tgt] - win + 0.08) : 1);
+    ctx.globalAlpha = ta;
+    serif(46); ctx.fillStyle = C.ink; ctx.textAlign = 'center';
+    ctx.fillText(sub.slice(0, Math.ceil(P(wl, 0.04, 0.2) * sub.length)), 960, 790);
+    mono(16, 700); ctx.fillStyle = WCOL[i];
+    ctx.fillText(`${pad(i + 1)} / ${pad(WT.length)}   ${SH.WORDS[i]}`, 960, 850);
+    ctx.globalAlpha = 1;
   }
 
   /* ================================================================
@@ -428,7 +436,7 @@
     f.aperture = 0.025;
     const sway = 0.45 * Math.sin(lt * 1.1) - 0.3;
     const m = M4.mul(M4.mul(M4.t(0, 1.05, 0), M4.ry(sway)), M4.s(0.8));
-    Object.assign(f.particles, { a: I.TUNNEL, b: I.SIGN, mix: E.inOutCubic(P(lt, 0, 1.3)), spread: 0.8, turb: 1.4, mb: M4.mul(m, M4.s(1.04)), gain: lerp(1, 0.16, P(lt, 0.6, 1.6)) });
+    Object.assign(f.particles, { a: I.WORD + WT.length - 1, b: I.SIGN, mix: E.inOutCubic(P(lt, 0, 1.3)), spread: 0.8, turb: 1.4, mb: M4.mul(m, M4.s(1.04)), gain: lerp(1, 0.16, P(lt, 0.6, 1.6)) });
     f.mark = { pos: [0, 1.05, 0], rot: M4.m3(M4.ry(sway)), scale: SH.SIGN_SCALE * 0.8, thick: 0.13, emit: 0, sweep: lerp(-1.2, 1.4, P(lt, 1.0, 2.8)), alpha: E.outCubic(P(lt, 0.9, 1.6)), color: LIME };
     f.bg.cone = 0.7; f.bg.coneCol = [0.2, 0.24, 0.13];
     f.post.flash = 0.75 * Math.pow(1 - P(lt, 0, 0.35), 2);
@@ -513,7 +521,7 @@
     const fonts = [`700 100px ${FD}`, `500 20px ${FM}`, `400 20px ${FM}`, `700 20px ${FM}`, `italic 400 40px ${FS}`];
     try { await Promise.race([Promise.all(fonts.map((x) => document.fonts.load(x))), new Promise((r) => setTimeout(r, 3500))]); } catch (e) { /* system fonts */ }
     if (!glOK) return;
-    EN.setSDF(MK.buildSDF(512), 512);
+    EN.setMesh(MK.buildMesh());
     EN.setShapes(SH.build());
   }
 

@@ -1,7 +1,7 @@
 /* XYPHUZ — signature mark.
  * The hand-drawn monogram as a Path2D, its pen-stroke centrelines in the
- * order it is actually written, and a signed distance field built from the
- * glyph at load time (raymarched as a bevelled 3D extrusion by engine.js).
+ * order it is actually written, and a bevelled 3D mesh extruded from the exact
+ * path at load time (drawn by engine.js).
  */
 (function () {
   'use strict';
@@ -55,48 +55,291 @@
     }
   }
 
-  /* ---------- signed distance field ---------- */
-  const INF = 1e20;
-  function edt1d(f, n, d, v, z) {
-    let k = 0; v[0] = 0; z[0] = -INF; z[1] = INF;
-    for (let q = 1; q < n; q++) {
-      let s = (f[q] + q * q - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
-      while (s <= z[k]) { k--; s = (f[q] + q * q - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]); }
-      k++; v[k] = q; z[k] = s; z[k + 1] = INF;
+  /* ---------- extruded mesh ----------
+   * The SVG path is flattened into rings, the caps are triangulated (earcut,
+   * after mapbox/earcut), and the sides are swept with a rounded bevel profile
+   * so the edges catch light smoothly.
+   */
+  function parseRings() {
+    const tok = D.match(/[MCLZ]|-?\d*\.?\d+(?:e-?\d+)?/g);
+    const rings = [];
+    let ring = null, i = 0, x = 0, y = 0;
+    const num = () => parseFloat(tok[i++]);
+    const push = (px, py) => {
+      const q = [(px - CX) / HALF, -(py - CY) / HALF], l = ring[ring.length - 1];
+      if (!l || Math.hypot(q[0] - l[0], q[1] - l[1]) > 1e-4) ring.push(q);
+    };
+    while (i < tok.length) {
+      const c = tok[i++];
+      if (c === 'M') { ring = []; rings.push(ring); x = num(); y = num(); push(x, y); }
+      else if (c === 'L') { x = num(); y = num(); push(x, y); }
+      else if (c === 'C') {
+        const x1 = num(), y1 = num(), x2 = num(), y2 = num(), x3 = num(), y3 = num();
+        for (let k = 1; k <= 12; k++) {
+          const t = k / 12, u = 1 - t;
+          push(u * u * u * x + 3 * u * u * t * x1 + 3 * u * t * t * x2 + t * t * t * x3, u * u * u * y + 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t * y3);
+        }
+        x = x3; y = y3;
+      } else if (c === 'Z') {
+        const f = ring[0], l = ring[ring.length - 1];
+        if (Math.hypot(f[0] - l[0], f[1] - l[1]) < 1e-4) ring.pop();
+      }
     }
-    k = 0;
-    for (let q = 0; q < n; q++) { while (z[k + 1] < q) k++; d[q] = (q - v[k]) * (q - v[k]) + f[v[k]]; }
+    const area = (r) => r.reduce((s, p, k) => { const q = r[(k + 1) % r.length]; return s + p[0] * q[1] - q[0] * p[1]; }, 0) / 2;
+    rings.sort((a, b) => Math.abs(area(b)) - Math.abs(area(a)));
+    rings.forEach((r, k) => { if ((area(r) > 0) !== (k === 0)) r.reverse(); }); // outer CCW, holes CW
+    return rings;
   }
-  function edt(grid, N) {
-    const f = new Float64Array(N), d = new Float64Array(N), v = new Int32Array(N), z = new Float64Array(N + 1);
-    for (let x = 0; x < N; x++) {
-      for (let y = 0; y < N; y++) f[y] = grid[y * N + x];
-      edt1d(f, N, d, v, z);
-      for (let y = 0; y < N; y++) grid[y * N + x] = d[y];
+
+  // Outward (away from the solid) vertex normals, with a capped miter length.
+  function ringNormals(r) {
+    const n = r.length, out = [];
+    for (let k = 0; k < n; k++) {
+      const a = r[(k - 1 + n) % n], b = r[k], c = r[(k + 1) % n];
+      const e1 = norm2([b[1] - a[1], -(b[0] - a[0])]), e2 = norm2([c[1] - b[1], -(c[0] - b[0])]);
+      const m = norm2([e1[0] + e2[0], e1[1] + e2[1]]);
+      out.push([m[0], m[1], Math.min(2, 1 / Math.max(0.3, m[0] * e1[0] + m[1] * e1[1]))]);
     }
-    for (let y = 0; y < N; y++) {
-      for (let x = 0; x < N; x++) f[x] = grid[y * N + x];
-      edt1d(f, N, d, v, z);
-      for (let x = 0; x < N; x++) grid[y * N + x] = d[x];
-    }
-  }
-  function buildSDF(N) {
-    const c = document.createElement('canvas'); c.width = c.height = N;
-    const g = c.getContext('2d');
-    g.translate(N / 2, N / 2); g.scale(N / (2 * R) / HALF, N / (2 * R) / HALF); g.translate(-CX, -CY);
-    g.fillStyle = '#fff'; g.fill(path);
-    const a = g.getImageData(0, 0, N, N).data;
-    const gin = new Float64Array(N * N), gout = new Float64Array(N * N);
-    for (let i = 0; i < N * N; i++) { const inside = a[i * 4 + 3] > 127; gin[i] = inside ? 0 : INF; gout[i] = inside ? INF : 0; }
-    edt(gin, N); edt(gout, N);
-    const out = new Float32Array(N * N), px = (2 * R) / N;
-    for (let i = 0; i < N * N; i++) out[i] = (gin[i] > 0 ? Math.sqrt(gin[i]) - 0.5 : -(Math.sqrt(gout[i]) - 0.5)) * px;
     return out;
+  }
+  function norm2(v) { const l = Math.hypot(v[0], v[1]) || 1; return [v[0] / l, v[1] / l]; }
+
+  function buildMesh(h = 0.13, b = 0.03, K = 6) {
+    const rings = parseRings();
+    const pos = [], nrm = [], idx = [];
+    const vert = (x, y, z, nx, ny, nz) => { pos.push(x, y, z); nrm.push(nx, ny, nz); return pos.length / 3 - 1; };
+
+    // bevel + side profile: rows of (inset, z, normal-xy weight, normal-z)
+    const prof = [];
+    for (let j = 0; j <= K; j++) { const th = (j / K) * Math.PI / 2; prof.push([b * (1 - Math.sin(th)), h - b * (1 - Math.cos(th)), Math.sin(th), Math.cos(th)]); }
+    for (let j = K; j >= 0; j--) { const th = (j / K) * Math.PI / 2; prof.push([b * (1 - Math.sin(th)), -(h - b * (1 - Math.cos(th))), Math.sin(th), -Math.cos(th)]); }
+
+    const capRings = [];
+    rings.forEach((r) => {
+      const N = ringNormals(r), n = r.length, base = pos.length / 3;
+      prof.forEach(([inset, z, sxy, sz]) => {
+        for (let k = 0; k < n; k++) {
+          const [nx, ny, m] = N[k], d = inset * m;
+          const l = Math.hypot(nx * sxy, ny * sxy, sz) || 1;
+          vert(r[k][0] - nx * d, r[k][1] - ny * d, z, (nx * sxy) / l, (ny * sxy) / l, sz / l);
+        }
+      });
+      for (let row = 0; row < prof.length - 1; row++) {
+        for (let k = 0; k < n; k++) {
+          const a = base + row * n + k, c = base + row * n + ((k + 1) % n), d = a + n, e = c + n;
+          idx.push(a, c, e, a, e, d);
+        }
+      }
+      capRings.push(r.map((p, k) => [p[0] - N[k][0] * b * N[k][2], p[1] - N[k][1] * b * N[k][2]]));
+    });
+
+    // caps
+    const flat = [], holes = [];
+    capRings.forEach((r, k) => { if (k) holes.push(flat.length / 2); r.forEach((p) => flat.push(p[0], p[1])); });
+    const tris = earcut(flat, holes);
+    [1, -1].forEach((s) => {
+      const base = pos.length / 3;
+      for (let k = 0; k < flat.length; k += 2) vert(flat[k], flat[k + 1], s * h, 0, 0, s);
+      for (let k = 0; k < tris.length; k += 3) {
+        if (s > 0) idx.push(base + tris[k], base + tris[k + 1], base + tris[k + 2]);
+        else idx.push(base + tris[k], base + tris[k + 2], base + tris[k + 1]);
+      }
+    });
+    return { pos: new Float32Array(pos), nrm: new Float32Array(nrm), idx: new Uint32Array(idx), thick: h };
+  }
+
+  /* earcut — polygon-with-holes triangulation (after mapbox/earcut, ISC) */
+  function earcut(data, holeIndices) {
+    const hasHoles = holeIndices && holeIndices.length;
+    const outerLen = hasHoles ? holeIndices[0] * 2 : data.length;
+    let outerNode = linkedList(data, 0, outerLen, true);
+    const triangles = [];
+    if (!outerNode || outerNode.next === outerNode.prev) return triangles;
+    if (hasHoles) outerNode = eliminateHoles(data, holeIndices, outerNode);
+    earcutLinked(outerNode, triangles, 0);
+    return triangles;
+  }
+  function linkedList(data, start, end, clockwise) {
+    let last;
+    if (clockwise === signedArea(data, start, end) > 0) for (let i = start; i < end; i += 2) last = insertNode(i, data[i], data[i + 1], last);
+    else for (let i = end - 2; i >= start; i -= 2) last = insertNode(i, data[i], data[i + 1], last);
+    if (last && equals(last, last.next)) { removeNode(last); last = last.next; }
+    return last;
+  }
+  function filterPoints(start, end) {
+    if (!start) return start;
+    if (!end) end = start;
+    let p = start, again;
+    do {
+      again = false;
+      if (!p.steiner && (equals(p, p.next) || area(p.prev, p, p.next) === 0)) {
+        removeNode(p); p = end = p.prev;
+        if (p === p.next) break;
+        again = true;
+      } else p = p.next;
+    } while (again || p !== end);
+    return end;
+  }
+  function earcutLinked(ear, triangles, pass) {
+    if (!ear) return;
+    let stop = ear;
+    while (ear.prev !== ear.next) {
+      const prev = ear.prev, next = ear.next;
+      if (isEar(ear)) {
+        triangles.push(prev.i / 2, ear.i / 2, next.i / 2);
+        removeNode(ear);
+        ear = next.next; stop = next.next;
+        continue;
+      }
+      ear = next;
+      if (ear === stop) {
+        if (!pass) earcutLinked(filterPoints(ear), triangles, 1);
+        else if (pass === 1) earcutLinked(cureLocalIntersections(filterPoints(ear), triangles), triangles, 2);
+        else if (pass === 2) splitEarcut(ear, triangles);
+        break;
+      }
+    }
+  }
+  function isEar(ear) {
+    const a = ear.prev, b = ear, c = ear.next;
+    if (area(a, b, c) >= 0) return false;
+    let p = ear.next.next;
+    while (p !== ear.prev) {
+      if (pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) && area(p.prev, p, p.next) >= 0) return false;
+      p = p.next;
+    }
+    return true;
+  }
+  function cureLocalIntersections(start, triangles) {
+    let p = start;
+    do {
+      const a = p.prev, b = p.next.next;
+      if (!equals(a, b) && intersects(a, p, p.next, b) && locallyInside(a, b) && locallyInside(b, a)) {
+        triangles.push(a.i / 2, p.i / 2, b.i / 2);
+        removeNode(p); removeNode(p.next);
+        p = start = b;
+      }
+      p = p.next;
+    } while (p !== start);
+    return filterPoints(p);
+  }
+  function splitEarcut(start, triangles) {
+    let a = start;
+    do {
+      let b = a.next.next;
+      while (b !== a.prev) {
+        if (a.i !== b.i && isValidDiagonal(a, b)) {
+          let c = splitPolygon(a, b);
+          a = filterPoints(a, a.next); c = filterPoints(c, c.next);
+          earcutLinked(a, triangles, 0); earcutLinked(c, triangles, 0);
+          return;
+        }
+        b = b.next;
+      }
+      a = a.next;
+    } while (a !== start);
+  }
+  function eliminateHoles(data, holeIndices, outerNode) {
+    const queue = [];
+    for (let i = 0; i < holeIndices.length; i++) {
+      const start = holeIndices[i] * 2, end = i < holeIndices.length - 1 ? holeIndices[i + 1] * 2 : data.length;
+      const list = linkedList(data, start, end, false);
+      if (list === list.next) list.steiner = true;
+      queue.push(getLeftmost(list));
+    }
+    queue.sort((a, b) => a.x - b.x);
+    for (const h of queue) outerNode = eliminateHole(h, outerNode);
+    return outerNode;
+  }
+  function eliminateHole(hole, outerNode) {
+    const bridge = findHoleBridge(hole, outerNode);
+    if (!bridge) return outerNode;
+    const bridgeReverse = splitPolygon(bridge, hole);
+    filterPoints(bridgeReverse, bridgeReverse.next);
+    return filterPoints(bridge, bridge.next);
+  }
+  function findHoleBridge(hole, outerNode) {
+    let p = outerNode, qx = -Infinity, m;
+    const hx = hole.x, hy = hole.y;
+    do {
+      if (hy <= p.y && hy >= p.next.y && p.next.y !== p.y) {
+        const x = p.x + ((hy - p.y) * (p.next.x - p.x)) / (p.next.y - p.y);
+        if (x <= hx && x > qx) { qx = x; m = p.x < p.next.x ? p : p.next; if (x === hx) return m; }
+      }
+      p = p.next;
+    } while (p !== outerNode);
+    if (!m) return null;
+    const stop = m, mx = m.x, my = m.y;
+    let tanMin = Infinity;
+    p = m;
+    do {
+      if (hx >= p.x && p.x >= mx && hx !== p.x && pointInTriangle(hy < my ? hx : qx, hy, mx, my, hy < my ? qx : hx, hy, p.x, p.y)) {
+        const tan = Math.abs(hy - p.y) / (hx - p.x);
+        if (locallyInside(p, hole) && (tan < tanMin || (tan === tanMin && (p.x > m.x || (p.x === m.x && sectorContainsSector(m, p)))))) { m = p; tanMin = tan; }
+      }
+      p = p.next;
+    } while (p !== stop);
+    return m;
+  }
+  const sectorContainsSector = (m, p) => area(m.prev, m, p.prev) < 0 && area(p.next, m, m.next) < 0;
+  function getLeftmost(start) {
+    let p = start, l = start;
+    do { if (p.x < l.x || (p.x === l.x && p.y < l.y)) l = p; p = p.next; } while (p !== start);
+    return l;
+  }
+  const pointInTriangle = (ax, ay, bx, by, cx, cy, px, py) =>
+    (cx - px) * (ay - py) >= (ax - px) * (cy - py) && (ax - px) * (by - py) >= (bx - px) * (ay - py) && (bx - px) * (cy - py) >= (cx - px) * (by - py);
+  const isValidDiagonal = (a, b) => a.next.i !== b.i && a.prev.i !== b.i && !intersectsPolygon(a, b) &&
+    ((locallyInside(a, b) && locallyInside(b, a) && middleInside(a, b) && (area(a.prev, a, b.prev) || area(a, b.prev, b))) ||
+      (equals(a, b) && area(a.prev, a, a.next) > 0 && area(b.prev, b, b.next) > 0));
+  const area = (p, q, r) => (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+  const equals = (a, b) => a.x === b.x && a.y === b.y;
+  const sgn = (v) => (v > 0 ? 1 : v < 0 ? -1 : 0);
+  const onSegment = (p, q, r) => q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x) && q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y);
+  function intersects(p1, q1, p2, q2) {
+    const o1 = sgn(area(p1, q1, p2)), o2 = sgn(area(p1, q1, q2)), o3 = sgn(area(p2, q2, p1)), o4 = sgn(area(p2, q2, q1));
+    if (o1 !== o2 && o3 !== o4) return true;
+    return (o1 === 0 && onSegment(p1, p2, q1)) || (o2 === 0 && onSegment(p1, q2, q1)) || (o3 === 0 && onSegment(p2, p1, q2)) || (o4 === 0 && onSegment(p2, q1, q2));
+  }
+  function intersectsPolygon(a, b) {
+    let p = a;
+    do {
+      if (p.i !== a.i && p.next.i !== a.i && p.i !== b.i && p.next.i !== b.i && intersects(p, p.next, a, b)) return true;
+      p = p.next;
+    } while (p !== a);
+    return false;
+  }
+  const locallyInside = (a, b) => (area(a.prev, a, a.next) < 0 ? area(a, b, a.next) >= 0 && area(a, a.prev, b) >= 0 : area(a, b, a.prev) < 0 || area(a, a.next, b) < 0);
+  function middleInside(a, b) {
+    let p = a, inside = false;
+    const px = (a.x + b.x) / 2, py = (a.y + b.y) / 2;
+    do {
+      if (p.y > py !== p.next.y > py && p.next.y !== p.y && px < ((p.next.x - p.x) * (py - p.y)) / (p.next.y - p.y) + p.x) inside = !inside;
+      p = p.next;
+    } while (p !== a);
+    return inside;
+  }
+  function splitPolygon(a, b) {
+    const a2 = node(a.i, a.x, a.y), b2 = node(b.i, b.x, b.y), an = a.next, bp = b.prev;
+    a.next = b; b.prev = a; a2.next = an; an.prev = a2; b2.next = a2; a2.prev = b2; bp.next = b2; b2.prev = bp;
+    return b2;
+  }
+  function insertNode(i, x, y, last) {
+    const p = node(i, x, y);
+    if (!last) { p.prev = p; p.next = p; } else { p.next = last.next; p.prev = last; last.next.prev = p; last.next = p; }
+    return p;
+  }
+  function removeNode(p) { p.next.prev = p.prev; p.prev.next = p.next; }
+  const node = (i, x, y) => ({ i, x, y, prev: null, next: null, steiner: false });
+  function signedArea(data, start, end) {
+    let sum = 0;
+    for (let i = start, j = end - 2; i < end; i += 2) { sum += (data[j] - data[i]) * (data[i + 1] + data[j + 1]); j = i; }
+    return sum;
   }
 
   // Pen timing (seconds into the reel) for each stroke, shared by the particle
   // write-on and the camera that rides the nib.
   const STROKE_T = [[0.3, 1.9], [2.05, 3.15]];
 
-  window.Mark3D = { CX, CY, HALF, R, path, STROKES, STROKE_T, pointAt, tracePartial, buildSDF };
+  window.Mark3D = { CX, CY, HALF, R, path, STROKES, STROKE_T, pointAt, tracePartial, buildMesh };
 })();

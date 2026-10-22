@@ -1,7 +1,7 @@
 /* XYPHUZ — GPU engine.
  * WebGL2 renderer for the reel: ~130k particles whose positions are a pure
  * function of time (morphing between precomputed 3D formations stored in float
- * textures), a raymarched SDF of the signature that shares the depth buffer,
+ * textures), the bevelled 3D signature mesh, all multisampled and depth-sorted,
  * a volumetric background, and an HDR post chain (bloom, chromatic
  * aberration, vignette, grain, filmic tonemap).
  */
@@ -11,8 +11,8 @@
   const SIDE = 360, N = SIDE * SIDE;
   let gl = null, ok = false, hdr = false, cv = null, cur = null;
   const PR = {};
-  let vaoQuad, vaoEmpty, vaoSprite, spriteBuf;
-  let sceneFB = null, bloom = [], shapeTex = [], sdfTex = null;
+  let vaoQuad, vaoEmpty, vaoSprite, spriteBuf, vaoMesh = null, meshCount = 0;
+  let msFB = null, sceneFB = null, bloom = [], shapeTex = [];
   let fw = 0, fh = 0;
 
   const QUAD_VS = `#version 300 es
@@ -42,7 +42,7 @@ precision highp float;
 precision highp sampler2D;
 uniform sampler2D uPA, uFA, uPB, uFB;
 uniform mat4 uVP, uMA, uMB;
-uniform float uMix, uSpread, uTurb, uTime, uSignT, uSignMode, uScan, uFail, uFailId, uPull, uSize, uFocal, uFocus, uAperture, uGain;
+uniform float uMix, uSpread, uTurb, uTime, uSignT, uSignMode, uScan, uFail, uFailId, uPull, uSize, uFocal, uFocus, uAperture, uGain, uBurst;
 uniform vec3 uPullC;
 out vec3 vCol; out float vA; out float vSoft;
 const int SIDE = ${SIDE};
@@ -105,13 +105,15 @@ void main() {
   vec3 a = evalP(PA, FA, uMA, seed, cA, bA);
   vec3 b = evalP(PB, FB, uMB, seed, cB, bB);
   float m = (uSignMode > 0.5 && floor(FB.w) == 2.0)
-    ? clamp((uSignT - FB.x) / 0.3, 0.0, 1.0)
+    ? clamp((uSignT - FB.x + 0.22) / 0.22, 0.0, 1.0)   // land exactly as the nib passes
     : clamp(uMix * (1.0 + uSpread) - seed * uSpread, 0.0, 1.0);
   float e = m * m * (3.0 - 2.0 * m);
   float arc = sin(3.14159 * e);
   vec3 p = mix(a, b, e);
   vec3 q = p * 0.35 + uTime * 0.3;
   p += vec3(sin(q.y * 2.1 + seed * 6.0) + sin(q.z * 1.3), sin(q.z * 1.7 + seed * 4.0) + sin(q.x * 2.3), sin(q.x * 1.9 + seed * 5.0) + sin(q.y * 1.1)) * arc * uTurb;
+  p.xy *= 1.0 + arc * uBurst * (0.6 + seed);   // between words: blow outward…
+  p.z += arc * uBurst * (3.0 + seed * 9.0);     // …and toward the lens
   p = mix(p, uPullC, clamp(uPull * (0.55 + seed * 0.9), 0.0, 1.0));
   vec3 col = mix(cA, cB, e) + vec3(0.3) * arc;
   float bri = mix(bA, bB, e) * (1.0 + arc * 0.5);
@@ -151,66 +153,38 @@ in vec4 vC; out vec4 o;
 void main() { vec2 d = gl_PointCoord * 2.0 - 1.0; float r2 = dot(d, d); if (r2 > 1.0) discard;
   float a = (exp(-r2 * 9.0) + exp(-r2 * 2.5) * 0.25) * vC.a; o = vec4(vC.rgb * a, a); }`;
 
-  const MARK_FS = `#version 300 es
+  const MESH_VS = `#version 300 es
+in vec3 aPos; in vec3 aN;
+uniform mat4 uVP; uniform mat3 uRot; uniform vec3 uMPos, uMScale;
+out vec3 vN; out vec3 vW; out float vFace;
+void main() {
+  vec3 w = uMPos + uRot * (aPos * uMScale);
+  vW = w; vN = normalize(uRot * (aN / uMScale)); vFace = smoothstep(0.75, 0.98, abs(aN.z));
+  gl_Position = uVP * vec4(w, 1.0);
+}`;
+  const MESH_FS = `#version 300 es
 precision highp float;
-in vec2 vUv; out vec4 o;
-uniform sampler2D uSdf;
-uniform mat4 uInvVP, uVP; uniform vec3 uCam, uMPos; uniform mat3 uRot; uniform float uMScale;
-uniform float uThick, uBevel, uEmit, uSweep, uAlpha, uTime; uniform vec3 uColor;
-const float R = 1.2;
-float sd2(vec2 p) {
-  vec2 uv = vec2(p.x, -p.y) / (2.0 * R) + 0.5;
-  vec2 q = clamp(uv, 0.002, 0.998);
-  return texture(uSdf, q).r + length(uv - q) * 2.0 * R;
-}
-float map(vec3 p) {
-  float d = sd2(p.xy) + uBevel;
-  vec2 w = vec2(d, abs(p.z) - uThick);
-  return min(max(w.x, w.y), 0.0) + length(max(w, 0.0)) - uBevel;
-}
-vec3 nrm(vec3 p) {
-  const vec2 k = vec2(1.0, -1.0); const float h = 0.0016;
-  return normalize(k.xyy * map(p + k.xyy * h) + k.yyx * map(p + k.yyx * h) + k.yxy * map(p + k.yxy * h) + k.xxx * map(p + k.xxx * h));
-}
+in vec3 vN; in vec3 vW; in float vFace; out vec4 o;
+uniform vec3 uCam, uColor; uniform float uEmit, uSweep, uAlpha;
 vec3 env(vec3 r) {
-  vec3 c = mix(vec3(0.01, 0.01, 0.015), vec3(0.12, 0.12, 0.15), smoothstep(-0.1, 1.0, r.y));
-  c += vec3(1.0) * smoothstep(0.14, 0.0, abs(r.x - uSweep)) * smoothstep(-0.3, 0.5, r.y) * 4.0;
-  c += vec3(1.0, 0.95, 0.9) * pow(max(dot(r, normalize(vec3(-0.6, 0.75, 0.4))), 0.0), 40.0) * 5.0;
-  c += uColor * smoothstep(0.05, -0.8, r.y) * 0.8;
+  vec3 c = mix(vec3(0.008, 0.008, 0.012), vec3(0.10, 0.10, 0.13), smoothstep(-0.2, 1.0, r.y));
+  c += vec3(1.0) * smoothstep(0.12, 0.0, abs(r.x - uSweep)) * smoothstep(-0.2, 0.6, r.y) * 5.0;
+  c += vec3(1.0, 0.95, 0.9) * pow(max(dot(r, normalize(vec3(-0.6, 0.75, 0.45))), 0.0), 60.0) * 6.0;
+  c += vec3(0.6, 0.7, 1.0) * pow(max(dot(r, normalize(vec3(0.8, 0.2, -0.3))), 0.0), 24.0) * 1.2;
+  c += uColor * smoothstep(0.05, -0.8, r.y) * 0.9;
   return c;
 }
 void main() {
-  vec2 ndc = vUv * 2.0 - 1.0;
-  vec4 a = uInvVP * vec4(ndc, -1.0, 1.0), b = uInvVP * vec4(ndc, 1.0, 1.0);
-  vec3 rd = normalize(b.xyz / b.w - a.xyz / a.w);
-  mat3 it = transpose(uRot);
-  vec3 ro = it * (uCam - uMPos) / uMScale, dir = it * rd;
-  vec3 bmax = vec3(0.95, 1.25, uThick + uBevel + 0.03);
-  vec3 inv = 1.0 / dir, t0 = (-bmax - ro) * inv, t1 = (bmax - ro) * inv;
-  vec3 tmn = min(t0, t1), tmx = max(t0, t1);
-  float tn = max(max(tmn.x, tmn.y), tmn.z), tf = min(min(tmx.x, tmx.y), tmx.z);
-  if (tn > tf || tf < 0.0) discard;
-  float t = max(tn, 0.0), hit = -1.0;
-  for (int i = 0; i < 128; i++) {
-    float hh = map(ro + dir * t);
-    if (hh < 0.0004) { hit = t; break; }
-    t += hh * 0.85;
-    if (t > tf) break;
-  }
-  if (hit < 0.0) discard;
-  vec3 p = ro + dir * hit, n = nrm(p), nw = uRot * n;
-  vec3 r = reflect(rd, nw);
-  float face = smoothstep(0.72, 0.97, abs(n.z));
-  float fres = pow(1.0 - max(dot(nw, -rd), 0.0), 4.0);
-  float dif = max(dot(nw, normalize(vec3(0.4, 0.8, 0.6))), 0.0);
-  float ao = clamp(map(p + n * 0.04) / 0.04, 0.0, 1.0) * 0.45 + 0.55;
-  vec3 enamel = uColor * (0.5 + 0.9 * dif) + env(r) * (0.04 + 0.6 * fres);
-  vec3 chrome = env(r) * (0.6 + 0.4 * fres) * vec3(0.9, 0.93, 1.0) + uColor * 0.06;
-  vec3 col = mix(chrome, enamel, face) * ao;
+  vec3 n = normalize(vN), v = normalize(uCam - vW);
+  if (dot(n, v) < 0.0) n = -n;
+  vec3 r = reflect(-v, n);
+  float fres = pow(1.0 - max(dot(n, v), 0.0), 5.0);
+  float dif = max(dot(n, normalize(vec3(0.4, 0.8, 0.6))), 0.0);
+  float spec = pow(max(dot(r, normalize(vec3(0.4, 0.8, 0.6))), 0.0), 80.0);
+  vec3 enamel = uColor * (0.42 + 0.75 * dif) + env(r) * (0.04 + 0.7 * fres) + vec3(spec) * 1.5;
+  vec3 chrome = env(r) * (0.55 + 0.45 * fres) * vec3(0.92, 0.95, 1.0) + uColor * 0.05;
+  vec3 col = mix(chrome, enamel, vFace);
   col = mix(col, uColor * 1.6, uEmit);
-  vec3 wp = uMPos + uRot * (p * uMScale);
-  vec4 clip = uVP * vec4(wp, 1.0);
-  gl_FragDepth = clip.z / clip.w * 0.5 + 0.5;
   o = vec4(col * uAlpha, uAlpha);
 }`;
 
@@ -269,7 +243,7 @@ void main() {
   function program(vs, fs) {
     const p = gl.createProgram();
     gl.attachShader(p, shader(gl.VERTEX_SHADER, vs)); gl.attachShader(p, shader(gl.FRAGMENT_SHADER, fs));
-    gl.bindAttribLocation(p, 0, 'aPos'); gl.bindAttribLocation(p, 1, 'aC');
+    gl.bindAttribLocation(p, 0, 'aPos'); gl.bindAttribLocation(p, 1, 'aC'); gl.bindAttribLocation(p, 1, 'aN');
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     p.u = {};
@@ -307,13 +281,27 @@ void main() {
     if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) throw new Error('framebuffer incomplete');
     return { f, t, rb, w, h };
   }
-  function drop(tg) { if (!tg) return; gl.deleteFramebuffer(tg.f); gl.deleteTexture(tg.t); if (tg.rb) gl.deleteRenderbuffer(tg.rb); }
+  function drop(tg) { if (!tg) return; gl.deleteFramebuffer(tg.f); if (tg.t) gl.deleteTexture(tg.t); if (tg.rb) gl.deleteRenderbuffer(tg.rb); if (tg.cb) gl.deleteRenderbuffer(tg.cb); }
+  // Multisampled colour + depth: everything 3D is drawn here, then resolved.
+  function msTarget(w, h) {
+    const samples = Math.min(4, gl.getParameter(gl.MAX_SAMPLES) || 1), f = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, f);
+    const cb = gl.createRenderbuffer(); gl.bindRenderbuffer(gl.RENDERBUFFER, cb);
+    gl.renderbufferStorageMultisample(gl.RENDERBUFFER, samples, hdr ? gl.RGBA16F : gl.RGBA8, w, h);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.RENDERBUFFER, cb);
+    const rb = gl.createRenderbuffer(); gl.bindRenderbuffer(gl.RENDERBUFFER, rb);
+    gl.renderbufferStorageMultisample(gl.RENDERBUFFER, samples, gl.DEPTH_COMPONENT24, w, h);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rb);
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) throw new Error('msaa framebuffer incomplete');
+    return { f, cb, rb, w, h };
+  }
 
   function resize(w, h) {
     if (w === fw && h === fh) return;
     fw = w; fh = h; cv.width = w; cv.height = h;
-    drop(sceneFB); bloom.forEach(drop); bloom = [];
-    sceneFB = target(w, h, true);
+    drop(msFB); drop(sceneFB); bloom.forEach(drop); bloom = [];
+    msFB = msTarget(w, h);
+    sceneFB = target(w, h, false);
     let bw = Math.max(1, w >> 1), bh = Math.max(1, h >> 1);
     for (let i = 0; i < 6; i++) { bloom.push(target(bw, bh, false)); bw = Math.max(1, bw >> 1); bh = Math.max(1, bh >> 1); }
   }
@@ -327,7 +315,7 @@ void main() {
       PR.bg = program(QUAD_VS, BG_FS);
       PR.part = program(PART_VS, PART_FS);
       PR.sprite = program(SPRITE_VS, SPRITE_FS);
-      PR.mark = program(QUAD_VS, MARK_FS);
+      PR.mesh = program(MESH_VS, MESH_FS);
       PR.down = program(QUAD_VS, DOWN_FS);
       PR.up = program(QUAD_VS, UP_FS);
       PR.comp = program(QUAD_VS, COMP_FS);
@@ -359,8 +347,22 @@ void main() {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     return t;
   }
-  function setShapes(list) { shapeTex = list.map((s) => ({ P: dataTex(s.P, SIDE, SIDE, gl.RGBA32F, gl.RGBA), F: dataTex(s.F, SIDE, SIDE, gl.RGBA32F, gl.RGBA) })); }
-  function setSDF(data, n) { sdfTex = dataTex(data, n, n, gl.R16F, gl.RED); }
+  function setShapes(list) {
+    const cache = new Map(); // formations may share a behaviour texture
+    const tex = (a) => { if (!cache.has(a)) cache.set(a, dataTex(a, SIDE, SIDE, gl.RGBA32F, gl.RGBA)); return cache.get(a); };
+    shapeTex = list.map((s) => ({ P: tex(s.P), F: tex(s.F) }));
+  }
+  function setMesh(m) {
+    vaoMesh = gl.createVertexArray(); gl.bindVertexArray(vaoMesh);
+    const pb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, pb); gl.bufferData(gl.ARRAY_BUFFER, m.pos, gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+    const nb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, nb); gl.bufferData(gl.ARRAY_BUFFER, m.nrm, gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, 0);
+    const ib = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, m.idx, gl.STATIC_DRAW);
+    gl.bindVertexArray(null);
+    meshCount = m.idx.length; meshThick = m.thick;
+  }
+  let meshThick = 0.13;
   const bindTex = (unit, t) => { gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t); };
 
   function fullscreen() { gl.bindVertexArray(vaoQuad); gl.drawArrays(gl.TRIANGLES, 0, 3); }
@@ -371,7 +373,7 @@ void main() {
     resize(f.width, f.height);
     const focal = (fh / 2) / Math.tan(f.fov / 2);
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, sceneFB.f);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, msFB.f);
     gl.viewport(0, 0, fw, fh);
     gl.disable(gl.BLEND); gl.disable(gl.DEPTH_TEST);
     gl.depthMask(true); gl.clearDepth(1); gl.clear(gl.DEPTH_BUFFER_BIT);
@@ -382,17 +384,16 @@ void main() {
     fullscreen();
 
     gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL);
-    if (f.mark && f.mark.alpha > 0.001 && sdfTex) {
-      const mk = f.mark;
-      use(PR.mark);
-      bindTex(4, sdfTex); i1('uSdf', 4);
-      m4('uInvVP', f.invVP); m4('uVP', f.vp); f3('uCam', f.eye); f3('uMPos', mk.pos); m3('uRot', mk.rot); f1('uMScale', mk.scale);
-      const th = Math.max(0.002, mk.thick);
-      f1('uThick', th); f1('uBevel', Math.min(0.028, th * 0.6)); f1('uEmit', mk.emit || 0); f1('uSweep', mk.sweep || 0);
-      f1('uAlpha', mk.alpha); f1('uTime', f.time); f3('uColor', mk.color || [0.83, 1, 0.23]);
+    if (f.mark && f.mark.alpha > 0.001 && vaoMesh) {
+      const mk = f.mark, kz = Math.max(0.015, mk.thick / meshThick);
+      use(PR.mesh);
+      m4('uVP', f.vp); m3('uRot', mk.rot); f3('uMPos', mk.pos); f3('uMScale', [mk.scale, mk.scale, mk.scale * kz]);
+      f3('uCam', f.eye); f3('uColor', mk.color || [0.83, 1, 0.23]);
+      f1('uEmit', mk.emit || 0); f1('uSweep', mk.sweep || 0); f1('uAlpha', mk.alpha);
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
       gl.depthMask(true);
-      fullscreen();
+      gl.bindVertexArray(vaoMesh);
+      gl.drawElements(gl.TRIANGLES, meshCount, gl.UNSIGNED_INT, 0);
     }
 
     const p = f.particles;
@@ -405,7 +406,7 @@ void main() {
       f1('uMix', p.mix); f1('uSpread', p.spread); f1('uTurb', p.turb); f1('uTime', f.time);
       f1('uSignT', p.signT || 0); f1('uSignMode', p.signMode || 0); f1('uScan', p.scan == null ? 99 : p.scan);
       f1('uFail', p.fail || 0); f1('uFailId', p.failId == null ? -1 : p.failId);
-      f1('uPull', p.pull || 0); f3('uPullC', p.pullC || [0, 0, 0]);
+      f1('uPull', p.pull || 0); f3('uPullC', p.pullC || [0, 0, 0]); f1('uBurst', p.burst || 0);
       f1('uSize', p.size); f1('uFocal', focal); f1('uFocus', f.focus); f1('uAperture', f.aperture); f1('uGain', p.gain);
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.depthMask(false);
       gl.bindVertexArray(vaoEmpty);
@@ -421,6 +422,10 @@ void main() {
       gl.drawArrays(gl.POINTS, 0, f.sprites.length);
     }
     gl.depthMask(true); gl.disable(gl.DEPTH_TEST);
+
+    // resolve MSAA into a sampleable texture
+    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, msFB.f); gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, sceneFB.f);
+    gl.blitFramebuffer(0, 0, fw, fh, 0, 0, fw, fh, gl.COLOR_BUFFER_BIT, gl.NEAREST);
 
     // bloom: progressive downsample, then tent upsample back up the chain
     gl.disable(gl.BLEND);
@@ -452,5 +457,5 @@ void main() {
     fullscreen();
   }
 
-  window.Engine = { SIDE, N, init, setShapes, setSDF, render, get ok() { return ok; }, get hdr() { return hdr; }, get canvas() { return cv; } };
+  window.Engine = { SIDE, N, init, setShapes, setMesh, render, get ok() { return ok; }, get hdr() { return hdr; }, get canvas() { return cv; } };
 })();

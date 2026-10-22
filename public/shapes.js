@@ -313,9 +313,49 @@
     return s;
   }
 
+  /* 9+ — manifesto words. A fixed slice of particles stays in the warp tunnel
+   * across every word (so they share one behaviour texture); the rest
+   * re-form each word on the beat. */
+  const WORDS = [['DESIGN', 1], ['BUILD', 0], ['SCALE', 2], ['AUTOMATE', 1], ['HARDEN', 3], ['SHIP', 1], ['REPEAT', 0]];
+  let WORD_F = null, TUN = null;
+  function wordShapes() {
+    const rt = rng(77);
+    WORD_F = new Float32Array(N * 4); TUN = new Float32Array(N * 4);
+    const isTun = new Uint8Array(N);
+    for (let i = 0; i < N; i++) {
+      if (rt() < 0.2) {
+        isTun[i] = 1;
+        const rad = 2.2 + Math.pow(rt(), 1.5) * 6, a = rt() * TAU;
+        TUN[i * 4] = Math.cos(a) * rad; TUN[i * 4 + 1] = Math.sin(a) * rad; TUN[i * 4 + 2] = -50 + rt() * 60;
+        TUN[i * 4 + 3] = rt() < 0.3 ? col(1, 0.75 + rt() * 0.24) : col(0, 0.5 + rt() * 0.45);
+        WORD_F[i * 4 + 3] = 7;
+      }
+    }
+    return WORDS.map(([word, ci], wi) => {
+      const W = 1800, H = 420, c = document.createElement('canvas'); c.width = W; c.height = H;
+      const g = c.getContext('2d');
+      g.font = '700 400px "Space Grotesk", Arial, sans-serif';
+      const size = Math.min(360, (400 * 1700) / g.measureText(word).width);
+      g.font = `700 ${size}px "Space Grotesk", Arial, sans-serif`;
+      g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(word, W / 2, H / 2 + size * 0.04);
+      const d = g.getImageData(0, 0, W, H).data, pix = [];
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (d[(y * W + x) * 4 + 3] > 127) pix.push(x, y);
+      const r = rng(100 + wi), np = pix.length / 2, sc = 14 / W, P = new Float32Array(N * 4);
+      for (let i = 0; i < N; i++) {
+        const k = i * 4;
+        if (isTun[i]) { P[k] = TUN[k]; P[k + 1] = TUN[k + 1]; P[k + 2] = TUN[k + 2]; P[k + 3] = TUN[k + 3]; continue; }
+        const q = Math.floor(r() * np) * 2;
+        P[k] = (pix[q] + r() - W / 2) * sc; P[k + 1] = -(pix[q + 1] + r() - H / 2) * sc; P[k + 2] = (r() - 0.5) * 0.5;
+        P[k + 3] = r() < 0.85 ? col(ci, 0.45 + r() * 0.5) : col(0, 0.6 + r() * 0.35);
+      }
+      return { P, F: WORD_F };
+    });
+  }
+
   window.Shapes = {
     SIDE, N, SIGN_SCALE, NODES, EDGES, LAYERS, REGIONS, GR, dirOf,
-    IDX: { DUST: 0, SIGN: 1, HALO: 2, TEXT: 3, ARCH: 4, WAFER: 5, FAB: 6, GLOBE: 7, TUNNEL: 8 },
-    build() { return [DUST(), SIGN(), HALO(), TEXT(), ARCH(), WAFER(), FAB(), GLOBE(), TUNNEL()].map(({ P, F }) => ({ P, F })); },
+    IDX: { DUST: 0, SIGN: 1, HALO: 2, TEXT: 3, ARCH: 4, WAFER: 5, FAB: 6, GLOBE: 7, TUNNEL: 8, WORD: 9 },
+    WORDS: WORDS.map((w) => w[0]),
+    build() { return [DUST(), SIGN(), HALO(), TEXT(), ARCH(), WAFER(), FAB(), GLOBE(), TUNNEL()].map(({ P, F }) => ({ P, F })).concat(wordShapes()); },
   };
 })();
