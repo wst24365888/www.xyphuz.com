@@ -1,9 +1,7 @@
 /* XYPHUZ — signature mark.
- * The hand-drawn monogram as a Path2D, its pen-stroke centrelines (for
- * write-on animation), and a WebGL2 renderer that turns it into a real 3D
- * object: a signed distance field is built from the glyph at load time and
- * raymarched as a bevelled extrusion with studio lighting. The same field also
- * drives topographic contour lines radiating out of the signature.
+ * The hand-drawn monogram as a Path2D, its pen-stroke centrelines in the
+ * order it is actually written, and a signed distance field built from the
+ * glyph at load time (raymarched as a bevelled 3D extrusion by engine.js).
  */
 (function () {
   'use strict';
@@ -15,12 +13,10 @@
 
   // Pen centrelines in SVG coordinates, in writing order.
   const RAW = [
-    // 1 — hook, down the leg, up the diagonal to the peak, down the long slash
-    [[152, 214], [180, 195], [212, 172], [240, 152], [256, 156], [252, 180], [237, 215], [226, 250], [225, 285], [233, 307], [246, 300], [268, 280], [295, 248], [320, 210], [345, 160], [368, 108], [388, 62], [402, 38], [414, 36], [410, 62], [398, 110], [384, 160], [370, 215], [355, 280], [344, 345], [336, 400], [325, 470], [312, 540], [308, 590], [312, 630], [318, 652]],
-    // 2 — the bottom-left arm, flicked up into the junction
-    [[146, 426], [175, 400], [200, 375], [222, 351], [234, 338]],
-    // 3 — bottom curve into the loop and out through the tail
-    [[226, 312], [234, 334], [248, 347], [272, 363], [302, 371], [340, 368], [370, 358], [398, 344], [420, 325], [438, 306], [447, 272], [452, 240], [458, 205], [470, 170], [485, 140], [499, 123], [512, 124], [519, 145], [516, 182], [504, 220], [488, 256], [472, 292], [466, 330], [472, 375], [487, 415], [510, 447], [535, 470], [549, 484]],
+    // 1 — hook, down the leg, along the bottom curve, up and round the loop, out the tail
+    [[152, 214], [180, 195], [212, 172], [240, 152], [256, 156], [252, 180], [237, 215], [226, 250], [224, 290], [230, 322], [248, 347], [272, 363], [302, 371], [340, 368], [370, 358], [398, 344], [420, 325], [438, 306], [447, 272], [452, 240], [458, 205], [470, 170], [485, 140], [499, 123], [512, 124], [519, 145], [516, 182], [504, 220], [488, 256], [472, 292], [466, 330], [472, 375], [487, 415], [510, 447], [535, 470], [549, 484]],
+    // 2 — from the bottom-left tip, up through the junction to the peak, then down the long slash
+    [[146, 426], [175, 400], [200, 375], [222, 351], [240, 326], [258, 297], [280, 266], [300, 238], [322, 205], [345, 160], [368, 108], [388, 62], [402, 38], [414, 36], [410, 62], [398, 110], [384, 160], [370, 215], [355, 280], [344, 345], [336, 400], [325, 470], [312, 540], [308, 590], [312, 630], [318, 652]],
   ];
 
   // Catmull-Rom → dense polyline with cumulative arc length.
@@ -98,184 +94,9 @@
     return out;
   }
 
-  /* ---------- WebGL ---------- */
-  const VS = `#version 300 es
-in vec2 aPos; void main(){ gl_Position = vec4(aPos, 0.0, 1.0); }`;
-  const FS = `#version 300 es
-precision highp float;
-uniform sampler2D uSdf;
-uniform vec2 uRes, uCenter;
-uniform float uScale, uThick, uBevel, uEmit, uTime, uSweep, uMode, uAlpha, uReach;
-uniform mat3 uRot;
-uniform vec3 uColor;
-out vec4 outColor;
-const float R = ${R.toFixed(2)};
-const float CAM = 7.0;
+  // Pen timing (seconds into the reel) for each stroke, shared by the particle
+  // write-on and the camera that rides the nib.
+  const STROKE_T = [[0.3, 1.9], [2.05, 3.15]];
 
-float sd2(vec2 p) {
-  vec2 uv = vec2(p.x, -p.y) / (2.0 * R) + 0.5;
-  vec2 q = clamp(uv, 0.002, 0.998);
-  return texture(uSdf, q).r + length(uv - q) * 2.0 * R;
-}
-float map(vec3 p) {
-  float d = sd2(p.xy) + uBevel;
-  vec2 w = vec2(d, abs(p.z) - uThick);
-  return min(max(w.x, w.y), 0.0) + length(max(w, 0.0)) - uBevel;
-}
-vec3 calcNormal(vec3 p) {
-  const vec2 k = vec2(1.0, -1.0); const float h = 0.0016;
-  return normalize(k.xyy * map(p + k.xyy * h) + k.yyx * map(p + k.yyx * h) + k.yxy * map(p + k.yxy * h) + k.xxx * map(p + k.xxx * h));
-}
-vec3 env(vec3 r) {
-  float sky = r.y * 0.5 + 0.5;
-  vec3 c = mix(vec3(0.012, 0.012, 0.018), vec3(0.11, 0.11, 0.13), smoothstep(0.25, 1.0, sky));
-  c += vec3(1.0) * smoothstep(0.16, 0.0, abs(r.x - uSweep)) * smoothstep(-0.3, 0.5, r.y) * 1.8;
-  c += vec3(1.0, 0.95, 0.9) * pow(max(dot(r, normalize(vec3(-0.6, 0.7, 0.45))), 0.0), 38.0) * 2.2;
-  c += uColor * smoothstep(0.05, -0.8, r.y) * 0.4;
-  return c;
-}
-void main() {
-  vec2 s = vec2(gl_FragCoord.x / uRes.x * 1920.0, (1.0 - gl_FragCoord.y / uRes.y) * 1080.0);
-  vec2 g = (s - uCenter) / uScale; g.y = -g.y;
-
-  if (uMode > 0.5) {
-    float d = sd2(g);
-    if (d < 0.0) { outColor = vec4(0.0); return; }
-    float f = d * 9.0 - uTime;
-    float w = fwidth(f);
-    float e = abs(fract(f + 0.5) - 0.5);
-    float line = 1.0 - smoothstep(0.0, w * 1.3, e);
-    float major = mod(floor(f + 0.5), 4.0) < 0.5 ? 1.0 : 0.38;
-    float reach = 1.0 - smoothstep(uReach - 0.4, uReach, d);
-    float front = exp(-abs(d - uReach + 0.15) * 7.0) * step(d, uReach);
-    float a = (line * major * exp(-d * 0.75) * reach + front * 0.6) * uAlpha;
-    outColor = vec4(uColor * a, a);
-    return;
-  }
-
-  vec3 ro = vec3(0.0, 0.0, CAM);
-  vec3 rd = normalize(vec3(g, 0.0) - ro);
-  mat3 it = transpose(uRot);
-  vec3 o = it * ro, dir = it * rd;
-  vec3 bmax = vec3(0.95, 1.25, uThick + uBevel + 0.03);
-  vec3 inv = 1.0 / dir;
-  vec3 t0 = (-bmax - o) * inv, t1 = (bmax - o) * inv;
-  vec3 tmn = min(t0, t1), tmx = max(t0, t1);
-  float tn = max(max(tmn.x, tmn.y), tmn.z), tf = min(min(tmx.x, tmx.y), tmx.z);
-  if (tn > tf || tf < 0.0) { outColor = vec4(0.0); return; }
-  float t = max(tn, 0.0), hit = -1.0;
-  for (int i = 0; i < 120; i++) {
-    float h = map(o + dir * t);
-    if (h < 0.0005) { hit = t; break; }
-    t += h * 0.85;
-    if (t > tf) break;
-  }
-  if (hit < 0.0) { outColor = vec4(0.0); return; }
-  vec3 p = o + dir * hit;
-  vec3 n = calcNormal(p);
-  vec3 nw = uRot * n;
-  vec3 r = reflect(rd, nw);
-  float face = smoothstep(0.72, 0.97, abs(n.z));
-  float fres = pow(1.0 - max(dot(nw, -rd), 0.0), 4.0);
-  float dif = max(dot(nw, normalize(vec3(0.5, 0.6, 0.8))), 0.0);
-  float ao = clamp(map(p + n * 0.04) / 0.04, 0.0, 1.0) * 0.45 + 0.55;
-  vec3 enamel = uColor * (0.55 + 0.6 * dif) + env(r) * (0.05 + 0.55 * fres);
-  vec3 chrome = env(r) * (0.6 + 0.4 * fres) * vec3(0.9, 0.93, 1.0) + uColor * 0.05;
-  vec3 col = mix(chrome, enamel, face) * ao;
-  col = col / (1.0 + col * 0.3);
-  col = mix(col, uColor, uEmit);
-  outColor = vec4(col, 1.0) * uAlpha;
-}`;
-
-  let gl = null, prog, U = {}, canvas, ok = false;
-
-  function init() {
-    canvas = document.createElement('canvas');
-    gl = canvas.getContext('webgl2', { premultipliedAlpha: true, antialias: false, alpha: true });
-    if (!gl) return;
-    const sh = (type, src) => {
-      const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
-      return s;
-    };
-    try {
-      prog = gl.createProgram();
-      gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS));
-      gl.linkProgram(prog);
-      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
-    } catch (e) { console.warn('Mark3D:', e); gl = null; return; }
-    gl.useProgram(prog);
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-    const loc = gl.getAttribLocation(prog, 'aPos');
-    gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    ['uSdf', 'uRes', 'uCenter', 'uScale', 'uThick', 'uBevel', 'uEmit', 'uTime', 'uSweep', 'uMode', 'uAlpha', 'uReach', 'uRot', 'uColor']
-      .forEach((n) => (U[n] = gl.getUniformLocation(prog, n)));
-
-    const N = 512, data = buildSDF(N);
-    const tex = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, tex);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16F, N, N, 0, gl.RED, gl.FLOAT, data);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.uniform1i(U.uSdf, 0);
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    ok = true;
-  }
-
-  function rot(rx, ry, rz) {
-    const cx = Math.cos(rx), sx = Math.sin(rx), cy = Math.cos(ry), sy = Math.sin(ry), cz = Math.cos(rz), sz = Math.sin(rz);
-    // R = Ry * Rx * Rz, column-major
-    const m = [
-      cy * cz + sy * sx * sz, cx * sz, -sy * cz + cy * sx * sz,
-      -cy * sz + sy * sx * cz, cx * cz, sy * sz + cy * sx * cz,
-      sy * cx, -sx, cy * cx,
-    ];
-    return new Float32Array(m);
-  }
-  const hex3 = (h) => { const n = parseInt(h.slice(1), 16); return [(n >> 16) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]; };
-
-  function setCommon(o) {
-    gl.uniform2f(U.uCenter, o.cx, o.cy);
-    gl.uniform1f(U.uScale, o.scale);
-    gl.uniform1f(U.uAlpha, o.alpha == null ? 1 : o.alpha);
-    gl.uniform3fv(U.uColor, hex3(o.color || '#d4ff3a'));
-  }
-
-  window.Mark3D = {
-    CX, CY, HALF, path, STROKES, pointAt, tracePartial,
-    get ok() { return ok; },
-    get canvas() { return canvas; },
-    init() { if (!gl && !ok) init(); return ok; },
-    // Start a frame at the given backing-store size.
-    begin(w, h) {
-      if (!ok) return;
-      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
-      gl.viewport(0, 0, w, h);
-      gl.uniform2f(U.uRes, w, h);
-      gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
-    },
-    contour(o) {
-      if (!ok) return;
-      setCommon(o);
-      gl.uniform1f(U.uMode, 1); gl.uniform1f(U.uTime, o.time || 0); gl.uniform1f(U.uReach, o.reach == null ? 99 : o.reach);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-    },
-    mark(o) {
-      if (!ok) return;
-      setCommon(o);
-      const th = Math.max(0.002, o.thick);
-      gl.uniform1f(U.uMode, 0);
-      gl.uniform1f(U.uThick, th);
-      gl.uniform1f(U.uBevel, Math.min(0.028, th * 0.6));
-      gl.uniform1f(U.uEmit, o.emit || 0);
-      gl.uniform1f(U.uSweep, o.sweep == null ? 0.3 : o.sweep);
-      gl.uniformMatrix3fv(U.uRot, false, rot(o.rx || 0, o.ry || 0, o.rz || 0));
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-    },
-  };
+  window.Mark3D = { CX, CY, HALF, R, path, STROKES, STROKE_T, pointAt, tracePartial, buildSDF };
 })();

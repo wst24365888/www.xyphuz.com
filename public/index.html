@@ -27,6 +27,7 @@
     <main>
       <section class="player" id="player" aria-label="Showreel player">
         <div class="stage" id="stage">
+          <canvas id="gl" aria-hidden="true"></canvas>
           <canvas id="reel" role="img" aria-label="A 30-second motion graphics showreel for Xyphuz: software engineer, software architect, enterprise systems at giga-fab scale and cloud infrastructure."></canvas>
           <button class="sound" id="sound" type="button">
             <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
@@ -66,7 +67,7 @@
           I’m <strong>Xyphuz</strong> — a software architect building <em>enterprise systems</em> for giga-fab
           semiconductor manufacturing, and the cloud infrastructure underneath them.
         </p>
-        <p class="note">I started out in motion and frontend design, so this page is all code: one canvas, one WebGL raymarcher for the 3D mark, one synth, zero video files. Every frame is rendered live, as a pure function of time.</p>
+        <p class="note">I started out in motion and frontend design, so this page is all code: one canvas, a WebGL2 engine pushing 130k particles, a raymarched 3D mark and an HDR bloom pipeline, one synth, zero video files. Every frame is rendered live, as a pure function of time.</p>
         <ul class="links">
           <li><a href="https://github.com/wst24365888" rel="noopener">GitHub ↗</a></li>
           <li><a href="mailto:xyphuzwu@gmail.com">xyphuzwu@gmail.com ↗</a></li>
@@ -80,6 +81,8 @@
     </footer>
 
     <script src="mark3d.js"></script>
+    <script src="engine.js"></script>
+    <script src="shapes.js"></script>
     <script src="reel.js"></script>
     <script src="audio.js"></script>
     <script src="main.js"></script>

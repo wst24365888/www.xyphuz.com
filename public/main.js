@@ -3,7 +3,7 @@
 
   const $ = (id) => document.getElementById(id);
   const canvas = $('reel'), stage = $('stage'), player = $('player');
-  const reel = Reel.create(canvas);
+  const reel = Reel.create($('gl'), canvas);
   const audio = window.ReelAudio;
   const DUR = Reel.DUR;
   const clamp = (x, a, b) => Math.min(b, Math.max(a, x));

@@ -157,8 +157,8 @@
 
   // 0–4  signature: drone, the pen scratching each stroke, riser into the drop
   at(0, (w) => I.pad(w, [45, 52, 57], 3.8, 0.035));
-  [[0.3, 1.62], [1.76, 1.96], [2.1, 3.15]].forEach(([a, b], i) => {
-    at(a, (w) => I.blip(w, [1320, 1568, 1760][i], 0.05, 0.08));
+  [[0.3, 1.9], [2.05, 3.15]].forEach(([a, b], i) => {
+    at(a, (w) => I.blip(w, [1320, 1760][i], 0.05, 0.08));
     at(a, (w) => I.scratch(w, b - a, 0.11));
   });
   at(2.4, (w) => I.riser(w, 1.6, 0.22));
