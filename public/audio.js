@@ -125,6 +125,19 @@
       g.gain.setValueAtTime(0.0001, w); g.gain.exponentialRampToValueAtTime(a, w + d * 0.9); g.gain.linearRampToValueAtTime(0.0001, w + d);
       n.connect(bp).connect(g).connect(bus);
     },
+    // pen on paper: grainy band-passed noise with a wobbling, pressure-like level
+    scratch(w, d, a = 0.1) {
+      const n = nz(w, w + d + 0.05), bp = filt('bandpass', 2600, 1.2), g = gain();
+      g.gain.setValueAtTime(0.0001, w);
+      for (let k = 0; k <= 16; k++) g.gain.linearRampToValueAtTime(a * (0.45 + 0.55 * Math.random()), w + (d * k) / 16);
+      g.gain.linearRampToValueAtTime(0.0001, w + d + 0.04);
+      bp.frequency.setValueAtTime(2200, w); bp.frequency.linearRampToValueAtTime(3400, w + d);
+      n.connect(bp).connect(g).connect(bus);
+    },
+    boing(w, m, a = 0.12) {
+      const o = osc('sine', mtof(m) * 1.5, w, w + 0.4); o.frequency.exponentialRampToValueAtTime(mtof(m), w + 0.06);
+      const g = gain(); env(g, w, 0.003, a, 0.32); o.connect(g).connect(bus);
+    },
     impact(w, a = 1) {
       const o = osc('sine', 110, w, w + 2); o.frequency.exponentialRampToValueAtTime(30, w + 0.8);
       const g = gain(); env(g, w, 0.003, a, 1.8); o.connect(g).connect(bus);
@@ -138,19 +151,20 @@
   const S = [];
   const at = (t, f) => S.push([t, f]);
 
-  // 0–3  boot: drone, clock ticks, typing, riser into the drop
-  at(0, (w) => I.pad(w, [45, 52, 57], 2.8, 0.035));
-  for (let b = 0; b < 6; b++) at(b * 0.5, (w) => I.blip(w, b % 2 ? 1320 : 1760, 0.05, 0.04));
-  for (let k = 0; k < 14; k++) at(0.5 + k * 0.075, (w) => I.hat(w, 0.05, 0.015));
-  [880, 1108, 1318, 1760].forEach((f, i) => at(1.45 + i * 0.2, (w) => I.blip(w, f, 0.06, 0.08)));
-  at(1.0, (w) => I.riser(w, 2.0, 0.2));
-  at(3, (w) => I.impact(w, 1));
+  // 0–4  signature: drone, the pen scratching each stroke, riser into the drop
+  at(0, (w) => I.pad(w, [45, 52, 57], 3.8, 0.035));
+  [[0.3, 1.75], [1.88, 2.72], [2.84, 3.12]].forEach(([a, b], i) => {
+    at(a, (w) => I.blip(w, [1320, 1568, 1760][i], 0.05, 0.08));
+    at(a, (w) => I.scratch(w, b - a, 0.11));
+  });
+  at(2.4, (w) => I.riser(w, 1.6, 0.22));
+  at(4, (w) => I.impact(w, 1));
 
-  // 3–23  groove: Am – F – C – G
+  // 4–24  groove: Am – F – C – G
   const CH = [[57, 60, 64], [57, 60, 65], [55, 60, 64], [55, 59, 62]];
   const RT = [45, 41, 48, 43];
   for (let b = 0; b < 10; b++) {
-    const t0 = 3 + b * 2, ci = b % 4;
+    const t0 = 4 + b * 2, ci = b % 4;
     at(t0, (w) => I.pad(w, CH[ci], 2, 0.03));
     for (let q = 0; q < 4; q++) {
       const tb = t0 + q * 0.5;
@@ -167,12 +181,18 @@
       }
     }
   }
-  [7, 11, 15, 19].forEach((t) => { at(t - 0.45, (w) => I.whoosh(w, 0.45, 0.16)); at(t, (w) => I.hat(w, 0.16, 0.6)); });
-  at(22.55, (w) => I.whoosh(w, 0.45, 0.2));
+  // cuts and match-cut accents
+  [8, 12, 16, 20].forEach((t) => { at(t - 0.45, (w) => I.whoosh(w, 0.45, 0.16)); at(t, (w) => I.hat(w, 0.16, 0.6)); });
+  for (let k = 0; k < 20; k++) at(8.12 + k / 21, (w) => I.hat(w, 0.06, 0.012)); // typing
+  at(15.3, (w) => I.riser(w, 0.7, 0.16)); // the dive
+  [69, 72, 74, 76, 79, 81].forEach((m, i) => at(16.5 + i * 0.5, (w) => I.boing(w, m, 0.12))); // ball meets letters
+  at(20.7, (w) => I.blip(w, 2200, 0.08, 0.03)); // tap
+  at(20.88, (w) => I.whoosh(w, 0.35, 0.14)); // app opens
+  [22.15, 22.31, 22.47].forEach((t, i) => at(t, (w) => I.blip(w, [1318, 1568, 1976][i], 0.06, 0.06))); // checkboxes
+  at(22.7, (w) => I.riser(w, 1.3, 0.18));
 
-  // 23–27  manifesto: a hit on every word, snare roll, riser
-  const WT = [23, 23.5, 24, 24.5, 25, 25.25, 25.5, 25.75, 26, 26.25, 26.5, 26.75];
-  WT.forEach((t, i) => {
+  // 24–27  manifesto: a hit on every word, snare roll, riser
+  [24, 24.5, 25, 25.5, 26, 26.25, 26.5, 26.75].forEach((t, i) => {
     const ci = i % 4;
     at(t, (w) => I.kick(w, 1));
     at(t, (w) => I.stab(w, CH[ci], 0.055));
