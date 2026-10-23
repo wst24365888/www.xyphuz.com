@@ -2,7 +2,7 @@
 
 The site is a film. **Xyphuz** — software architect building enterprise systems at giga-fab scale and the cloud infrastructure under them.
 
-Visitors pass an entry gate (which unlocks audio), watch a 30-second full-bleed, live-rendered film, and when it ends its last frame *becomes the site*: the same 3D world, now interactive. Switch between roles and ~130k particles re-form into each one; drag to orbit, move to push particles, click to scatter. Every layout — the camera framing, the overlay typography and the UI — adapts from ultra-wide desktop down to portrait phones.
+Visitors get a 3-second countdown, then a 30-second full-bleed, live-rendered film plays on its own (tap anywhere for sound), and when it ends its last frame *becomes the site*: the same 3D world, now interactive. Switch between roles and ~130k particles re-form into each one; drag to orbit, move to push particles, click to scatter. Every layout — the camera framing, the overlay typography and the UI — adapts from ultra-wide desktop down to portrait phones.
 
 No framework, no video file. The reel runs on a small WebGL2 engine (`public/engine.js`): about 130,000 particles whose positions are a pure function of time, morphing between nine precomputed 3D formations (`public/shapes.js`), a bevelled 3D mesh extruded from the hand-drawn signature path (`public/mark3d.js`), all multisampled, and an HDR post chain with bloom, depth-of-field bokeh, chromatic aberration and grain. `public/reel.js` directs the camera and timing and draws the typography overlay; the soundtrack is synthesised with WebAudio (`public/audio.js`) on the same 120 BPM grid, so play, pause, seek and loop stay in sync.
 

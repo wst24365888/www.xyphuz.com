@@ -37,16 +37,15 @@
       </div>
     </header>
 
-    <!-- entry gate -->
-    <section class="gate" id="gate" aria-label="Enter">
+    <!-- countdown into the film -->
+    <section class="gate" id="gate" aria-label="The film starts in a moment">
       <p class="kicker">XYPHUZ — A LIVE-RENDERED FILM · 30 S</p>
-      <h1>Software architect.<br /><em>Enterprise systems, cloud infrastructure,</em><br />and a soft spot for motion.</h1>
-      <div class="gate-cta">
-        <button class="cta" id="enter-sound" type="button"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>Enter with sound</button>
-        <button class="ghost" id="enter-quiet" type="button">Enter without sound</button>
+      <div class="count" aria-live="polite">
+        <svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="54" /><circle id="count-ring" cx="60" cy="60" r="54" /></svg>
+        <span id="count-num"></span>
       </div>
-      <button class="link" id="enter-site" type="button">or skip the film →</button>
       <p class="loading" id="loading">Warming up the GPU…</p>
+      <p class="sound-hint" id="sound-hint">Sound is off — <b>tap anywhere</b> to turn it on</p>
     </section>
 
     <!-- the film's progress -->

@@ -2,7 +2,7 @@
   'use strict';
 
   /* The site has three modes:
-   *   gate  — a living particle field and an invitation (unlocks audio)
+   *   gate  — a living particle field counting down into the film
    *   intro — the 30-second film, full-bleed
    *   site  — the film's last frame, made interactive
    */
@@ -13,6 +13,7 @@
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const query = new URLSearchParams(location.search);
   const now = () => performance.now();
+  const COUNT = 3; // seconds of countdown before the film rolls
 
   const SECTIONS = [
     {
@@ -75,6 +76,7 @@
     const on = audio.enabled && !audio.muted;
     $('sound').setAttribute('aria-pressed', String(on));
     $('sound').querySelector('.lbl').textContent = on ? 'Sound on' : 'Sound off';
+    root.classList.toggle('sound-on', on);
   }
   async function toggleSound() {
     if (!audio.enabled) {
@@ -156,6 +158,8 @@
   });
   stage.addEventListener('pointerdown', (e) => {
     if (st.mode !== 'site' && st.mode !== 'gate') return;
+    // A first tap anywhere also turns the sound on (browsers need a gesture for audio).
+    if (st.mode === 'gate' && !audio.enabled) toggleSound();
     st.drag = { x: e.clientX, y: e.clientY, d: 0 };
     st.mx = (e.clientX / window.innerWidth) * 2 - 1; st.my = 1 - (e.clientY / window.innerHeight) * 2;
     stage.setPointerCapture(e.pointerId); stage.classList.add('dragging');
@@ -169,9 +173,6 @@
   stage.addEventListener('pointercancel', endDrag);
 
   /* ---------- controls ---------- */
-  $('enter-sound').addEventListener('click', () => startIntro(true));
-  $('enter-quiet').addEventListener('click', () => startIntro(false));
-  $('enter-site').addEventListener('click', () => enterSite(true));
   $('skip').addEventListener('click', () => enterSite(true));
   $('replay').addEventListener('click', () => startIntro(audio.enabled && !audio.muted));
   $('sound').addEventListener('click', toggleSound);
@@ -191,7 +192,7 @@
     }
   });
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { pauseIntro(true); audio.ambient(false); }
+    if (document.hidden) { pauseIntro(true); audio.ambient(false); if (st.mode === 'gate') st.countAt = null; }
     else if (st.mode === 'site' && audio.enabled && !audio.muted) audio.ambient(true);
   });
 
@@ -200,6 +201,14 @@
     requestAnimationFrame(frame);
     if (!st.ready) return;
     const n = now();
+    if (st.mode === 'gate') {
+      if (st.countAt == null) st.countAt = n; // count from the first frame anyone can see
+      const rem = COUNT - (n - st.countAt) / 1000;
+      if (rem <= 0) { startIntro(audio.enabled && !audio.muted); return; }
+      const num = String(Math.ceil(rem));
+      if (num !== st.countNum) { st.countNum = num; const el = $('count-num'); el.textContent = num; el.classList.remove('tick'); void el.offsetWidth; el.classList.add('tick'); }
+      $('count-ring').style.strokeDashoffset = String(339.3 * (rem / COUNT));
+    }
     if (st.mode === 'intro') {
       const t = introT();
       if (t >= DUR) enterSite(false);
@@ -225,11 +234,9 @@
   /* ---------- boot ---------- */
   setMode('gate');
   syncSound();
-  ['enter-sound', 'enter-quiet'].forEach((id) => ($(id).disabled = true));
   reel.ready().then(() => {
-    st.ready = true;
+    st.ready = true; st.countAt = null;
     root.classList.add('ready');
-    ['enter-sound', 'enter-quiet'].forEach((id) => ($(id).disabled = false));
     const still = parseFloat(query.get('t'));
     if (!isNaN(still)) { setMode('intro'); st.paused = true; st.pauseT = still; }
     else if (query.has('site') || reduced) enterSite(true);
