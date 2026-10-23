@@ -22,7 +22,7 @@
   const MK = window.Mark3D, SH = window.Shapes, EN = window.Engine, I = SH.IDX;
 
   // Virtual overlay space, recomputed every frame from the canvas size.
-  let W = 1920, H = 1080, PORT = false, M = 84, TOP = 150, FRAME = 1, SCALE = 1;
+  let W = 1920, H = 1080, PORT = false, M = 84, TOP = 150, HUD = 0, FRAME = 1, SCALE = 1;
 
   const C = { ink: '#f3f0e8', dim: '#8a8896', line: '#26262f', lime: '#d4ff3a', coral: '#ff4d2e', blue: '#6f8cff', yellow: '#ffd23a' };
   const LIME = [0.83, 1, 0.23];
@@ -156,6 +156,9 @@
     SCALE = land ? Math.min(ow / 1920, oh / 1080) : ow / 1080;
     W = ow / SCALE; H = oh / SCALE; PORT = !land;
     M = PORT ? 64 : 84; TOP = PORT ? 270 : 150;
+    // the site's top edge: below the header and the nav row, so HUD text never hides behind them
+    const bar = [document.querySelector('.bar'), document.getElementById('nav')].reduce((b, el) => (el ? Math.max(b, el.getBoundingClientRect().bottom) : b), 0);
+    HUD = (bar * ow) / window.innerWidth / SCALE;
     FRAME = Math.max(1, ((16 / 9) / (ow / oh)) * 0.8);
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, ow, oh);
     ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
@@ -821,7 +824,7 @@
   function flush() { const s = SOUND; SOUND = []; return s; }
 
   function drawLog(score) {
-    const x = PORT ? M : W - M - 500, y0 = PORT ? TOP + 30 : H - 200, lh = PORT ? 40 : 28;
+    const x = PORT ? M : W - M - 500, lh = PORT ? 40 : 28, y0 = PORT ? HUD + 30 + 2 * lh : H - 200;
     if (score) { mono(PORT ? 20 : 13, 700); ctx.fillStyle = C.dim; ctx.textAlign = 'left'; ctx.fillText(score, x, y0 - lh); }
     mono(PORT ? 24 : 15, 600); ctx.textAlign = 'left';
     LOG.forEach((l, k) => {
@@ -835,8 +838,9 @@
     const [x, y, w] = project(p);
     if (w <= 0) return;
     mono(PORT ? 22 : 13, 700); const tw = ctx.measureText(text).width;
-    ctx.fillStyle = 'rgba(7,7,10,.78)'; ctx.fillRect(x + 16, y - 30, tw + 16, PORT ? 32 : 22);
-    ctx.fillStyle = col; ctx.textAlign = 'left'; ctx.fillText(text, x + 24, y - (PORT ? 8 : 14));
+    const bx = x + 16 + tw + 16 > W - 16 ? x - 16 - tw - 16 : x + 16; // flip left at the screen edge
+    ctx.fillStyle = 'rgba(7,7,10,.78)'; ctx.fillRect(bx, y - 30, tw + 16, PORT ? 32 : 22);
+    ctx.fillStyle = col; ctx.textAlign = 'left'; ctx.fillText(text, bx + 8, y - (PORT ? 8 : 14));
   }
 
   function nodeCard(i, a) {
@@ -1019,7 +1023,7 @@
       [0.8, '✓ p99 holding · error budget intact', C.dim],
       [3.5, `✓ region-${id + 1} recovered · zero downtime`, C.lime],
     ];
-    const x = PORT ? M : W - M - 470, y0 = PORT ? TOP + 40 : H - 300;
+    const x = PORT ? M : W - M - 470, y0 = PORT ? HUD + 70 : H - 300;
     mono(PORT ? 24 : 15, 600); ctx.textAlign = 'left';
     lines.forEach(([tt, str, col], k) => {
       if (age < tt) return;
