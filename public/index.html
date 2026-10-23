@@ -29,10 +29,15 @@
       </button>
       <nav class="nav" id="nav" aria-label="Sections"></nav>
       <div class="actions">
-        <button class="pill" id="sound" type="button" aria-pressed="false">
-          <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span class="lbl">Sound off</span>
+        <button class="pill icon" id="sound" type="button" aria-pressed="false" aria-label="Sound">
+          <svg class="i-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor" /><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+          <svg class="i-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor" /><path d="m15.5 9.5 5 5m0-5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+          <span class="lbl">Sound off</span>
         </button>
-        <button class="pill" id="replay" type="button">↺ <span class="lbl">Replay</span></button>
+        <button class="pill icon" id="replay" type="button" aria-label="Replay the film">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /><path d="M4 4v4.5h4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          <span class="lbl">Replay</span>
+        </button>
         <button class="pill" id="skip" type="button">Skip <span aria-hidden="true">→</span></button>
       </div>
     </header>
@@ -62,7 +67,7 @@
         <a href="mailto:xyphuzwu@gmail.com">xyphuzwu@gmail.com ↗</a>
       </div>
     </section>
-    <p class="hint" id="hint"><span class="desk">Drag to orbit · click to scatter · ← → to switch</span><span class="touch">Drag to orbit · tap to scatter</span></p>
+    <p class="hint" id="hint"><span class="desk">Drag to orbit · hold to gather · scroll to switch</span><span class="touch">Drag to orbit · hold to gather · swipe to switch</span></p>
 
     <script src="mark3d.js"></script>
     <script src="engine.js"></script>

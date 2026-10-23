@@ -199,7 +199,7 @@
     const tgt = L3(pw, [0, 0, 0], e), dist = lerp(3.2, 10.5, e), ang = lerp(0.42, 0, e);
     camera(f, [tgt[0] + Math.sin(ang) * dist, tgt[1] + 0.35 * (1 - e), Math.cos(ang) * dist], tgt, 35);
     f.aperture = lerp(0.07, 0.035, e);
-    const an = 1 - 0.035 * E.inOutCubic(P(lt, 3.35, 3.95));
+    const an = 1 - 0.035 * Math.sin(Math.PI * P(lt, 3.3, 3.98)); // anticipation, back to rest by the cut
     Object.assign(f.particles, { a: I.DUST, b: I.SIGN, signMode: 1, signT: lt, turb: 0.35, ma: M4.ry(lt * 0.05), mb: M4.s(an), gain: lerp(1.0, 0.22, P(lt, 0.3, 3.2)) });
     f.bg.stars = 0.4;
     const tip = penAt(lt), tw = toWorld(tip.p);
@@ -240,7 +240,7 @@
     const sc = SH.SIGN_SCALE * (1 - 0.97 * E.inExpo(P(lt, 3.3, 3.95)));
     f.mark = {
       pos: [0, 0, 0], rot: M4.m3(M4.mul(M4.ry(ry), M4.rx(0.12 * Math.sin(lt * 1.3)))), scale: sc,
-      thick: 0.13 * pop, emit: 1 - E.outCubic(P(lt, 0.05, 0.6)), sweep: lerp(-1.3, 1.5, P(lt, 0.15, 2.8)), alpha: 1, color: LIME,
+      thick: 0.13 * pop, emit: 1 - E.outCubic(P(lt, 0.05, 0.6)), sweep: lerp(-1.3, 1.5, P(lt, 0.15, 2.8)), alpha: E.outCubic(P(lt, 0, 0.45)), color: LIME,
     };
     Object.assign(f.particles, { a: I.SIGN, b: I.HALO, mix: E.outCubic(P(lt, 0, 1.5)), spread: 0.5, turb: 1.6, mb: HALO_M, pull: E.inExpo(P(lt, 3.2, 3.95)), gain: lerp(0.22, 0.9, E.outCubic(P(lt, 0, 1.2))) });
     f.bg.cone = 0.9 * (1 - ex); f.bg.coneCol = [0.22, 0.26, 0.14];
@@ -286,7 +286,6 @@
     camera(f, [Math.sin(ang) * d, lerp(0.4, 1.3, P(lt, 0, 3)), Math.cos(ang) * d], [0, 0.2, 0], 40);
     f.aperture = 0.035;
     Object.assign(f.particles, { a: I.HALO, b: I.TEXT, mix: E.inOutCubic(P(lt, 0.05, 1.4)), spread: 0.7, turb: 1.2, ma: HALO_M, pull: 1 - E.outCubic(P(lt, 0, 0.75)), size: 0.016, gain: 1.5 });
-    f.post.flash = 0.5 * Math.pow(1 - P(lt, 0, 0.35), 2);
     const lines = [
       [0.9, '$ go test ./... -race'],
       [1.5, 'ok   dispatch     0.84s   coverage 92.1%'],
@@ -367,7 +366,6 @@
       Object.assign(f.particles, { a: I.WAFER, b: I.FAB, ma: M4.rx(WAFER_TILT), mix: e2, spread: 0.8, turb: 1.2, scan: -5, gain: lerp(1, 1.8, e2) });
     }
     f.aperture = 0.03;
-    f.post.flash = 0.45 * Math.pow(1 - P(lt, 0, 0.3), 2);
 
     const wl = P(lt, 0.9, 1.2) * (1 - P(lt, 1.8, 2.0));
     if (wl > 0) {
@@ -447,7 +445,6 @@
       size: 0.016, gain: lerp(1.2, 1.5, hit),
     });
     f.post.ca = 1.4 + hit * 6; f.post.bloom = 0.95 + hit * 0.6; f.post.threshold = 0.62;
-    f.post.flash = Math.max(f.post.flash, 0.45 * Math.pow(1 - P(lt, 0, 0.3), 2));
 
     label('[ 06 ]  MANIFESTO', W / 2, TOP, 'center');
     if (!landed) return;
@@ -466,8 +463,10 @@
    * 07 — XYPHUZ: the particles come home (and hand over to the site)
    * ================================================================ */
   const signSway = (c) => 0.45 * Math.sin(c * 1.1) - 0.3;
-  const signM = (c) => M4.mul(M4.mul(M4.t(0, 1.05, 0), M4.ry(signSway(c))), M4.s(0.8));
-  const signMark = (c, alpha) => ({ pos: [0, 1.05, 0], rot: M4.m3(M4.ry(signSway(c))), scale: SH.SIGN_SCALE * 0.8, thick: 0.13, emit: 0, sweep: 1.4 - 2.6 * fract((c - 3) / 7), alpha, color: LIME });
+  // `lk` lets the mark turn toward the visitor's cursor on the site.
+  const signR = (c, lk = [0, 0]) => M4.mul(M4.ry(signSway(c) + lk[0] * 0.55), M4.rx(-lk[1] * 0.35));
+  const signM = (c, lk) => M4.mul(M4.mul(M4.t(0, 1.05, 0), signR(c, lk)), M4.s(0.8));
+  const signMark = (c, alpha, lk) => ({ pos: [0, 1.05, 0], rot: M4.m3(signR(c, lk)), scale: SH.SIGN_SCALE * 0.8, thick: 0.13, emit: 0, sweep: 1.4 - 2.6 * fract((c - 3) / 7) + (lk ? lk[0] * 0.6 : 0), alpha, color: LIME });
   function sOutro(lt, t, f) {
     const pz = PORT ? 0.72 : 1; // phones: closer on the mark, it's the hero of the last shot
     camera(f, [Math.sin(lt * 0.15) * 1.2 * pz, 0.5, 11.5 * pz], [0, 0.5, 0], 35, 0, PORT ? [0, 0.22] : [0, 0]);
@@ -476,7 +475,6 @@
     f.mark = signMark(lt, E.outCubic(P(lt, 0.9, 1.6)));
     f.mark.sweep = lerp(-1.2, 1.4, P(lt, 1.0, 2.8));
     f.bg.cone = 0.7; f.bg.coneCol = [0.2, 0.24, 0.13];
-    f.post.flash = 0.75 * Math.pow(1 - P(lt, 0, 0.35), 2);
 
     const out = 1 - P(lt, 2.45, 2.9); // the site's own UI takes over from here
     const y0 = PORT ? H * 0.64 : H * 0.755;
@@ -531,14 +529,47 @@
     ctx.restore();
   }
 
-  const FLASHES = [[4, 0.85]];
+  const FLASHES = [];
+
+  // Every cut is a hand-off: for the first moments of a chapter the camera,
+  // exposure and lens glide in from the previous chapter's last frame, so the
+  // particles — already continuous between formations — never jump on screen.
+  const BLEND = 0.75;
+  let sink = null;
+  function silently(fn) {
+    if (!sink) sink = document.createElement('canvas').getContext('2d');
+    const keep = ctx; ctx = sink;
+    try { fn(); } finally { ctx = keep; }
+  }
+  function setView(f, eye, target, up, fy, shift) {
+    f.vp = M4.mul(M4.t(shift[0], shift[1], 0), M4.mul(M4.persp(fy, W / H, 0.05, 400), M4.look(eye, target, up)));
+    f.eye = eye; f.target = target; f.up = up; f.fov = fy; f.shift = shift;
+    f.focus = Math.hypot(...sub(target, eye));
+    VP = f.vp;
+  }
+  function blend(a, b, k) {
+    setView(b, L3(a.eye, b.eye, k), L3(a.target, b.target, k), norm(L3(a.up, b.up, k)), lerp(a.fov, b.fov, k), [lerp(a.shift[0], b.shift[0], k), lerp(a.shift[1], b.shift[1], k)]);
+    b.aperture = lerp(a.aperture, b.aperture, k);
+    for (const key of ['gain', 'size']) b.particles[key] = lerp(a.particles[key], b.particles[key], k);
+    for (const key of ['bloom', 'threshold', 'ca', 'vig', 'exposure']) b.post[key] = lerp(a.post[key], b.post[key], k);
+    for (const key of ['cone', 'stars']) b.bg[key] = lerp(a.bg[key] || 0, b.bg[key] || 0, k);
+    b.bg.coneCol = L3(a.bg.coneCol, b.bg.coneCol, k);
+  }
 
   function render(t) {
     t = clamp(t, 0, DUR - 1e-4);
     layout();
     const sc = SCENES.find((s) => t >= s.s && t < s.e) || SCENES[SCENES.length - 1];
+    const idx = SCENES.indexOf(sc), lt = t - sc.s;
+    let pf = null;
+    if (idx > 0 && lt < BLEND) {
+      const pv = SCENES[idx - 1];
+      pf = base(t);
+      silently(() => pv.draw(pv.e - pv.s - 1e-3, pv.e - 1e-3, pf));
+    }
     const f = base(t);
-    sc.draw(t - sc.s, t, f);
+    sc.draw(lt, t, f);
+    if (pf) blend(pf, f, E.inOutCubic(lt / BLEND));
     for (const [ft, a] of FLASHES) if (t >= ft && t < ft + 0.4) f.post.flash = Math.max(f.post.flash, a * Math.pow(1 - P(t, ft, ft + 0.4), 2));
     submit(f);
     ctx.globalAlpha = 1;
@@ -554,51 +585,149 @@
     { id: 'engineer', shape: I.TEXT, target: [0, 0.2, 0], yaw: -0.15, pitch: 0.08, dist: 15.5, fov: 40, gain: 1.5 },
     { id: 'architect', shape: I.ARCH, target: [0, -0.3, 0], yaw: -0.55, pitch: 0.5, dist: 16.5, fov: 38, gain: 1.0 },
     { id: 'enterprise', shape: I.FAB, target: [-1.2, 0.6, 0], yaw: 0.75, pitch: 0.58, dist: 12.5, fov: 40, gain: 1.8 },
-    { id: 'cloud', shape: I.GLOBE, target: [0, 0, 0], yaw: 0.3, pitch: 0.18, dist: 15, fov: 38, gain: 1.0 },
+    { id: 'cloud', shape: I.GLOBE, target: [0, 0, 0], yaw: 0.3, pitch: 0.18, dist: 20, fov: 38, gain: 1.0 },
   ];
   const GATE = { shape: I.DUST, target: [0, 0, -3], yaw: 0, pitch: 0.12, dist: 16, fov: 40, gain: 1.15 };
-  const formM = (h, c) => (h.shape === I.SIGN ? M4.mul(signM(c), M4.s(1.04)) : h.shape === I.GLOBE ? M4.ry(0.6 + c * 0.22) : h.shape === I.DUST ? M4.ry(c * 0.03) : M4.id());
+  const formM = (h, c, lk, spin) => (h.shape === I.SIGN ? M4.mul(signM(c, lk), M4.s(1.04)) : h.shape === I.GLOBE ? M4.ry(spin == null ? 0.6 + c * 0.22 : spin) : h.shape === I.DUST ? M4.ry(c * 0.03) : M4.id());
+  const NODE_INFO = {
+    'Ops Console': 'where people see and steer the fab', 'Tool Gateway': 'speaks to every machine on the floor',
+    'API Gateway': 'one front door — authenticated, rate-limited', MES: 'the source of truth for every lot and step',
+    Dispatcher: 'decides what runs where, in milliseconds', Scheduler: 'plans hours ahead so tools never idle',
+    SPC: 'catches drift before it becomes scrap', Postgres: 'transactions that must never be wrong',
+    Redis: 'hot state at memory speed', Lakehouse: 'years of history, still queryable',
+    Kafka: 'every event, ordered and replayable', Workers: 'scale out when the floor gets busy',
+  };
+  const near = (pts, mx, my, r) => {
+    let best = -1, bd = r;
+    pts.forEach((q, i) => { if (!q) return; const d = Math.hypot(q[0] - mx, q[1] - my); if (d < bd) { bd = d; best = i; } });
+    return best;
+  };
 
-  /* state: { cur, prev, since, clock, yaw, pitch, mouse: [x, y] (NDC), force, ui (0–1), flash, gate } */
+  function nodeCard(i, a) {
+    const n = SH.NODES[i], [x, y] = project(n.p);
+    ctx.globalAlpha = a;
+    // its connections light up
+    ctx.lineCap = 'round';
+    SH.EDGES.forEach(([u, v]) => {
+      if (u !== i && v !== i) return;
+      const [x1, y1] = project(SH.NODES[u].p), [x2, y2] = project(SH.NODES[v].p);
+      ctx.strokeStyle = 'rgba(212,255,58,.18)'; ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      ctx.strokeStyle = C.lime; ctx.lineWidth = 2; ctx.stroke();
+    });
+    ctx.strokeStyle = C.lime; ctx.lineWidth = 2; dot(x, y, 26 + Math.sin(performance.now() / 180) * 3); ctx.stroke();
+    const left = x > W - 560;
+    const tx = left ? x - 50 : x + 50;
+    ctx.textAlign = left ? 'right' : 'left';
+    // a dark plate so the card reads over a busy field
+    serif(PORT ? 34 : 26); const dw = ctx.measureText(NODE_INFO[n.lab] || '').width;
+    font(PORT ? 52 : 38); const pw = Math.max(dw, ctx.measureText(n.lab).width) + 44, ph = PORT ? 150 : 112;
+    ctx.fillStyle = 'rgba(7,7,10,.74)';
+    ctx.beginPath(); (ctx.roundRect ? ctx.roundRect(left ? tx - pw + 22 : tx - 22, y - (PORT ? 72 : 58), pw, ph, 14) : ctx.rect(left ? tx - pw + 22 : tx - 22, y - (PORT ? 72 : 58), pw, ph)); ctx.fill();
+    mono(PORT ? 22 : 14, 700); ctx.fillStyle = C.lime; ctx.fillText(`L${n.li} · ${SH.LAYERS[n.li].n}`, tx, y - 34);
+    font(PORT ? 52 : 38); ctx.fillStyle = C.ink; ctx.fillText(n.lab, tx, y + 4);
+    serif(PORT ? 34 : 26); ctx.fillStyle = 'rgba(243,240,232,.8)'; ctx.fillText(NODE_INFO[n.lab] || '', tx, y + (PORT ? 48 : 36));
+    ctx.globalAlpha = 1; ctx.lineCap = 'butt';
+  }
+
+  function failLog(id, age) {
+    const lines = [
+      [0, `✗ region-${id + 1} unreachable`, C.coral],
+      [0.35, '↻ rerouting traffic to healthy regions', C.ink],
+      [0.8, '✓ p99 holding · error budget intact', C.dim],
+      [3.5, `✓ region-${id + 1} recovered · zero downtime`, C.lime],
+    ];
+    const x = PORT ? M : W - M - 470, y0 = PORT ? TOP + 40 : H - 300;
+    mono(PORT ? 24 : 15, 600); ctx.textAlign = 'left';
+    lines.forEach(([tt, str, col], k) => {
+      if (age < tt) return;
+      ctx.globalAlpha = 1 - P(age, 5.6, 6.2);
+      ctx.fillStyle = col; ctx.fillText(str.slice(0, Math.ceil(P(age, tt, tt + 0.25) * str.length)), x, y0 + k * (PORT ? 40 : 28));
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  /* st: { cur, prev, since, clock, yaw, pitch, mouse (NDC), force, well, look, ui, flash, gate, still,
+   *       cursor (fine pointer present), holding, sel (node), failId, failAge, dir }
+   * Returns what is under the cursor: { kind: 'node' | 'region', i } or null. */
   function renderHome(st) {
     layout();
     const c = st.clock;
     const A = st.gate ? GATE : HOME[st.prev], B = st.gate ? GATE : HOME[st.cur];
-    const e = E.inOutCubic(P(st.since, 0, 1.4));
-    const yaw = lerp(A.yaw, B.yaw, e) + st.yaw + (st.still ? 0 : (c - 3) * 0.03);
-    const pitch = clamp(lerp(A.pitch, B.pitch, e) + st.pitch, -0.35, 1.25);
+    const e = E.inOutCubic(P(st.since, 0, 1.4)), arc = Math.sin(Math.PI * e);
+    // switching sections swoops the camera around the morph
+    const swoop = st.still ? 0 : arc;
+    const yaw = lerp(A.yaw, B.yaw, e) + st.yaw + (st.still ? 0 : (c - 3) * 0.03) + swoop * 0.7 * (st.dir || 1);
+    const pitch = clamp(lerp(A.pitch, B.pitch, e) + st.pitch + swoop * 0.12, -0.35, 1.25);
     const tgt = L3(A.target, B.target, e);
     const shift = st.gate ? [0, 0] : PORT ? [0, 0.22 + 0.14 * st.ui] : [0.3 * st.ui, 0.02 * st.ui];
     const f = base(c);
     const pz = PORT && !st.gate ? lerp(A.mark ? 0.72 : 1, B.mark ? 0.72 : 1, e) : 1;
-    camera(f, orbit(yaw, pitch, lerp(A.dist, B.dist, e) * pz, tgt), tgt, lerp(A.fov, B.fov, e), 0, shift);
+    camera(f, orbit(yaw, pitch, lerp(A.dist, B.dist, e) * pz * (1 + swoop * 0.15), tgt), tgt, lerp(A.fov, B.fov, e), 0, shift);
     f.aperture = 0.02;
-    Object.assign(f.particles, { a: A.shape, b: B.shape, ma: formM(A, c), mb: formM(B, c), mix: P(st.since, 0, 1.4), spread: 0.8, turb: 1.2, gain: lerp(A.gain, B.gain, e) });
-    if (B.shape === I.GLOBE || A.shape === I.GLOBE) Object.assign(f.particles, { fail: 0, failId: -1 });
+    const lk = st.look || [0, 0];
+    Object.assign(f.particles, { a: A.shape, b: B.shape, ma: formM(A, c, lk, st.spin), mb: formM(B, c, lk, st.spin), mix: P(st.since, 0, 1.4), spread: 0.8, turb: 1.4, burst: st.still ? 0 : 0.5, gain: lerp(A.gain, B.gain, e) });
+    const fail = st.failId >= 0 ? P(st.failAge, 0, 0.2) * (1 - P(st.failAge, 3.4, 3.9)) : 0;
+    if (B.shape === I.GLOBE || A.shape === I.GLOBE) Object.assign(f.particles, { fail, failId: st.failId >= 0 ? st.failId : -1 });
     if (B.shape === I.FAB || A.shape === I.FAB) f.particles.scan = -5;
 
     // the cursor, as a point in the world on the plane through the target
     const fw = norm(sub(tgt, f.eye)), rt = norm(cross(fw, f.up)), up = cross(rt, fw), th = Math.tan(f.fov / 2);
-    const dir = norm([
-      fw[0] + rt[0] * (st.mouse[0] - shift[0]) * th * (W / H) + up[0] * (st.mouse[1] - shift[1]) * th,
-      fw[1] + rt[1] * (st.mouse[0] - shift[0]) * th * (W / H) + up[1] * (st.mouse[1] - shift[1]) * th,
-      fw[2] + rt[2] * (st.mouse[0] - shift[0]) * th * (W / H) + up[2] * (st.mouse[1] - shift[1]) * th,
-    ]);
+    const ox = (st.mouse[0] - shift[0]) * th * (W / H), oy = (st.mouse[1] - shift[1]) * th;
+    const dir = norm([fw[0] + rt[0] * ox + up[0] * oy, fw[1] + rt[1] * ox + up[1] * oy, fw[2] + rt[2] * ox + up[2] * oy]);
     const k = dot3(sub(tgt, f.eye), fw) / Math.max(1e-3, dot3(dir, fw));
-    f.mouse = { p: [f.eye[0] + dir[0] * k, f.eye[1] + dir[1] * k, f.eye[2] + dir[2] * k], r: f.focus * 0.12, f: st.force };
+    f.mouse = { p: [f.eye[0] + dir[0] * k, f.eye[1] + dir[1] * k, f.eye[2] + dir[2] * k], r: f.focus * 0.12, f: st.force, well: st.well || 0 };
 
     const markA = (A.mark ? 1 - P(st.since, 0, 0.5) : 0) + (B.mark ? P(st.since, 0.6, 1.4) : 0);
-    if (markA > 0.001 && !st.gate) f.mark = signMark(c, Math.min(1, A.mark && B.mark ? 1 : markA));
+    if (markA > 0.001 && !st.gate) f.mark = signMark(c, Math.min(1, A.mark && B.mark ? 1 : markA), lk);
     f.bg.cone = (A.mark ? 1 - e : 0) * 0.7 + (B.mark ? e : 0) * 0.7; f.bg.coneCol = [0.2, 0.24, 0.13];
     f.bg.stars = 0.4;
     f.post.flash = st.flash || 0;
+    f.post.ca = 1 + swoop * 3 + (st.well || 0) * 2;
     submit(f);
 
-    if (st.gate) return;
-    const pa = P(st.since, 1.2, 1.8) * st.ui;
-    if (B.id === 'architect') archPins(pa);
-    if (B.id === 'cloud') regionPins(formM(B, c), f.eye, pa, 0);
+    if (st.gate) return null;
+    const mx = (st.mouse[0] * 0.5 + 0.5) * W, my = (0.5 - st.mouse[1] * 0.5) * H;
+    const settled = P(st.since, 1.2, 1.8) * st.ui;
+    let pick = null, hint = 'hold to gather · click to scatter';
+
+    if (B.id === 'architect' && settled > 0) {
+      const pts = SH.NODES.map((n) => { const q = project(n.p); return q[2] > 0 ? q : null; });
+      const hv = near(pts, mx, my, PORT ? 120 : 70);
+      if (hv >= 0) pick = { kind: 'node', i: hv };
+      const focus = st.sel >= 0 ? st.sel : hv;
+      archPins(settled * (focus >= 0 ? 0.35 : 1));
+      if (focus >= 0) nodeCard(focus, settled);
+      hint = hv >= 0 ? (st.sel === hv ? 'click to release' : 'click to pin') : 'hover a service';
+    }
+    if (B.id === 'cloud' && settled > 0) {
+      const spin = formM(B, c, lk, st.spin);
+      const pts = SH.REGIONS.map((rg) => {
+        const d = SH.dirOf(...rg), p = M4.apply(spin, [d[0] * SH.GR, d[1] * SH.GR, d[2] * SH.GR]);
+        return dot3(norm(p), norm(sub(f.eye, p))) > 0.15 ? project(p) : null;
+      });
+      const hv = near(pts, mx, my, PORT ? 130 : 80);
+      if (hv >= 0) pick = { kind: 'region', i: hv };
+      regionPins(spin, f.eye, settled, 0);
+      if (fail > 0.5 && pts[st.failId]) {
+        const q = pts[st.failId];
+        mono(PORT ? 22 : 14, 700); ctx.fillStyle = C.coral; ctx.textAlign = 'left'; ctx.fillText('✗ DOWN', q[0] + 26, q[1] + 22);
+      }
+      if (st.failId >= 0 && st.failAge < 6.2) failLog(st.failId, st.failAge);
+      hint = hv >= 0 ? `click to take region-${hv + 1} down` : 'click a region to break it';
+    }
+    if (st.holding) hint = 'release to let go';
+
     corners(0.6 * st.ui);
+    // a cursor that tells you what you can do
+    if (st.cursor && st.ui > 0.5) {
+      const r = 14 + (st.well || 0) * 22 + (pick ? 8 : 0);
+      ctx.strokeStyle = pick ? C.lime : 'rgba(243,240,232,.85)'; ctx.lineWidth = 2;
+      dot(mx, my, r); ctx.stroke();
+      ctx.fillStyle = C.lime; dot(mx, my, 3); ctx.fill();
+      mono(13, 700); ctx.fillStyle = pick ? C.lime : 'rgba(243,240,232,.8)'; ctx.textAlign = 'left';
+      ctx.fillText(hint.toUpperCase(), mx + r + 12, my + 4);
+    }
+    return pick;
   }
 
   async function ready() {

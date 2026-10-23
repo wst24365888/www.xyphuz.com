@@ -53,7 +53,7 @@
     t0: 0, paused: false, pauseT: 0,
     cur: 0, prev: 0, switchAt: -1e9, homeAt: 0,
     yaw: 0, pitch: 0, vy: 0, vp: 0, mx: 0, my: 0, lastMove: -1e9, force: 0, kick: 0, ui: 0, flashAt: -1e9,
-    drag: null,
+    drag: null, last: 0, spin: 0.6, well: 0, look: [0, 0], cursor: false, pick: null, sel: -1, failId: -1, failAt: -1e9, dir: 1, wheelAt: 0,
   };
 
   /* ---------- sizing ---------- */
@@ -130,8 +130,9 @@
   function go(i) {
     i = (i + SECTIONS.length) % SECTIONS.length;
     if (st.mode !== 'site' || i === st.cur) return;
+    st.dir = i > st.cur ? 1 : -1;
     st.prev = st.cur; st.cur = i; st.switchAt = now();
-    st.yaw *= 0.3; st.pitch *= 0.3; st.vy = st.vp = 0;
+    st.yaw *= 0.3; st.pitch *= 0.3; st.vy = st.vp = 0; st.sel = -1;
     audio.ui('click');
     paint(i);
   }
@@ -146,9 +147,11 @@
     syncSound();
   }
 
-  /* ---------- pointer: orbit, push, scatter ---------- */
+  /* ---------- pointer: orbit, push, hold to gather, click to scatter / pick ---------- */
   stage.addEventListener('pointermove', (e) => {
     st.mx = (e.clientX / window.innerWidth) * 2 - 1; st.my = 1 - (e.clientY / window.innerHeight) * 2;
+    st.cursor = e.pointerType === 'mouse';
+    root.classList.toggle('fine-pointer', st.cursor);
     if (e.pointerType === 'mouse' || st.drag) st.lastMove = now();
     if (!st.drag) return;
     const dx = e.clientX - st.drag.x, dy = e.clientY - st.drag.y;
@@ -160,15 +163,27 @@
     if (st.mode !== 'site' && st.mode !== 'gate') return;
     // A first tap anywhere also turns the sound on (browsers need a gesture for audio).
     if (st.mode === 'gate' && !audio.enabled) toggleSound();
-    st.drag = { x: e.clientX, y: e.clientY, d: 0 };
+    st.drag = { x: e.clientX, y: e.clientY, x0: e.clientX, d: 0, t: now() };
     st.mx = (e.clientX / window.innerWidth) * 2 - 1; st.my = 1 - (e.clientY / window.innerHeight) * 2;
     stage.setPointerCapture(e.pointerId); stage.classList.add('dragging');
   });
-  const endDrag = () => {
-    if (!st.drag) return;
-    if (st.drag.d < 8) { st.kick = 1; st.lastMove = now(); audio.ui('scatter'); }
+  const endDrag = (e) => {
+    const d = st.drag;
+    if (!d) return;
     st.drag = null; stage.classList.remove('dragging');
+    const dt = now() - d.t, dx = (e && e.clientX != null ? e.clientX : d.x) - d.x0;
+    if (st.well > 0.3) { st.kick = 1.8; st.lastMove = now(); audio.ui('scatter'); return; }           // released a gathered knot
+    if (st.mode === 'site' && dt < 300 && Math.abs(dx) > 70 && e && e.pointerType !== 'mouse') { go(st.cur + (dx < 0 ? 1 : -1)); return; } // flick
+    if (d.d >= 8 || st.mode !== 'site') return;
+    const pk = st.pick;
+    if (pk && pk.kind === 'node') { st.sel = st.sel === pk.i ? -1 : pk.i; audio.ui('click'); return; }
+    if (pk && pk.kind === 'region') { st.failId = pk.i; st.failAt = now(); audio.ui('fail'); return; }
+    st.kick = 1; st.lastMove = now(); audio.ui('scatter');
   };
+  stage.addEventListener('wheel', (e) => {
+    if (st.mode !== 'site' || Math.abs(e.deltaY) < 24 || now() - st.wheelAt < 1100) return;
+    st.wheelAt = now(); go(st.cur + (e.deltaY > 0 ? 1 : -1));
+  }, { passive: true });
   stage.addEventListener('pointerup', endDrag);
   stage.addEventListener('pointercancel', endDrag);
 
@@ -222,13 +237,22 @@
     const target = n - st.lastMove < 1200 ? 0.9 : 0;
     st.force += (target - st.force) * 0.08;
     st.kick *= 0.9;
+    const dt = Math.min(0.1, (n - (st.last || n)) / 1000); st.last = n;
+    // the globe slows right down while you're aiming at a region
+    st.spin += dt * (st.pick && st.pick.kind === 'region' ? 0.015 : reduced ? 0 : 0.22);
+    const holding = !!st.drag && st.drag.d < 8 && n - st.drag.t > 220;
+    st.well += ((holding ? 1 : 0) - st.well) * (holding ? 0.06 : 0.2);
+    if (holding) st.lastMove = n;
+    st.look[0] += (st.mx - st.look[0]) * 0.06; st.look[1] += (st.my - st.look[1]) * 0.06;
     const fl = Math.max(0, 1 - (n - st.flashAt) / 380);
-    reel.renderHome({
+    st.pick = reel.renderHome({
       gate: st.mode === 'gate', cur: st.cur, prev: st.prev,
       since: (n - st.switchAt) / 1000, clock: st.mode === 'gate' ? n / 1000 : 3 + (n - st.homeAt) / 1000,
-      yaw: st.yaw, pitch: st.pitch, mouse: [st.mx, st.my], force: st.force + st.kick * 2.4, ui: st.ui,
-      flash: 0.8 * fl * fl, still: reduced,
+      yaw: st.yaw, pitch: st.pitch, mouse: [st.mx, st.my], force: st.force * (1 - st.well) + st.kick * 2.4, ui: st.ui,
+      flash: 0.8 * fl * fl, still: reduced, well: st.well, look: reduced ? [0, 0] : st.look, cursor: st.cursor,
+      holding, spin: st.spin, sel: st.sel, failId: st.failId, failAge: (n - st.failAt) / 1000, dir: st.dir,
     });
+    stage.classList.toggle('picking', !!st.pick);
   }
 
   /* ---------- boot ---------- */

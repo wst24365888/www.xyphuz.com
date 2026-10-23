@@ -253,6 +253,7 @@
       const w = ac.currentTime + 0.01;
       if (kind === 'hover') I.blip(w, 2600, 0.018, 0.03);
       else if (kind === 'scatter') { I.whoosh(w, 0.35, 0.1); I.pluck(w, 88, 0.035); }
+      else if (kind === 'fail') { I.alarm(w, 523); I.alarm(w + 0.18, 440); I.impact(w, 0.25); }
       else { I.pluck(w, 81, 0.05); I.pluck(w + 0.06, 88, 0.035); }
     },
     // A slow pad that keeps breathing under the site after the reel ends.

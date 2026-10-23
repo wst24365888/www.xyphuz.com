@@ -25,6 +25,7 @@ a { color: inherit; }
 .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .mode-site .stage { cursor: grab; }
 .mode-site .stage.dragging { cursor: grabbing; }
+.mode-site.fine-pointer .stage, .mode-site.fine-pointer .stage.dragging { cursor: none; } /* the canvas draws its own */
 
 /* ---------- top bar ---------- */
 .bar {
@@ -46,6 +47,9 @@ a { color: inherit; }
 }
 .pill:hover { border-color: var(--lime); }
 .pill[aria-pressed='true'] { color: var(--lime); }
+.pill.icon svg { width: 18px; height: 18px; flex: none; }
+#sound .i-on, #sound[aria-pressed='true'] .i-off { display: none; }
+#sound[aria-pressed='true'] .i-on { display: block; }
 .eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; }
 .eq i { width: 3px; height: 4px; background: currentColor; border-radius: 1px; }
 [aria-pressed='true'] .eq i { animation: eq 0.9s ease-in-out infinite; }
@@ -152,8 +156,11 @@ a { color: inherit; }
   }
   .panel h2 { font-size: clamp(26px, 7vw, 36px); }
   .hint { display: none; }
-  .pill { height: 34px; padding: 0 12px; }
+  .pill { height: 40px; padding: 0 12px; }
+  .pill.icon { width: 40px; padding: 0; justify-content: center; }
+  .pill.icon svg { width: 20px; height: 20px; }
   .pill .lbl { display: none; }
+  #sound[aria-pressed='false'] { color: var(--ink); border-color: rgba(243, 240, 232, 0.35); }
   #skip { padding: 0 14px; }
 }
 @media (max-width: 380px) {
