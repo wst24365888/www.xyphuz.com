@@ -232,13 +232,21 @@
     const dt = Math.min(0.1, (n - (st.last || n)) / 1000); st.last = n;
     st.look[0] += (st.mx - st.look[0]) * 0.05; st.look[1] += (st.my - st.look[1]) * 0.05;
     const fl = Math.max(0, 1 - (n - st.flashAt) / 380);
-    const out = reel.renderHome({
-      gate: st.mode === 'gate', cur: st.cur, prev: st.prev, dt, now: n / 1000,
-      since: (n - st.switchAt) / 1000, clock: st.mode === 'gate' ? n / 1000 : 3 + (n - st.homeAt) / 1000,
-      mouse: [st.mx, st.my], ui: st.ui, flash: 0.8 * fl * fl, still: reduced, look: reduced ? [0, 0] : st.look, cursor: st.cursor, dir: st.dir,
-    });
+    let out = null;
+    try {
+      out = reel.renderHome({
+        gate: st.mode === 'gate', cur: st.cur, prev: st.prev, dt, now: n / 1000,
+        since: (n - st.switchAt) / 1000, clock: st.mode === 'gate' ? n / 1000 : 3 + (n - st.homeAt) / 1000,
+        mouse: [st.mx, st.my], ui: st.ui, flash: 0.8 * fl * fl, still: reduced, look: reduced ? [0, 0] : st.look, cursor: st.cursor, dir: st.dir,
+      });
+    } catch (err) {
+      if (!st.failed) console.error(err); // once; the real cursor comes back below
+      st.failed = true;
+    }
     play(out && out.sounds);
     stage.classList.toggle('picking', !!(out && out.hover));
+    // hide the system cursor only while the canvas is actually drawing its own
+    stage.classList.toggle('own-cursor', !!(out && out.cursor));
   }
 
   if (query.has('debug')) window.__xy = { st, reel }; // inspection hook for development

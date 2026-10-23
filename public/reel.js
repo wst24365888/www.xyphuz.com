@@ -981,7 +981,8 @@
     }
 
     corners(0.6 * st.ui);
-    if (st.cursor && st.ui > 0.5 && hint) {
+    const drawn = !!(st.cursor && st.ui > 0.5 && hint);
+    if (drawn) {
       const live = HOVER || (PD && PD.mode !== 'click');
       const r = PD ? 20 : 14 + (HOVER ? 8 : 0);
       ctx.strokeStyle = live ? C.lime : 'rgba(243,240,232,.85)'; ctx.lineWidth = 2;
@@ -990,7 +991,7 @@
       mono(13, 700); ctx.fillStyle = live ? C.lime : 'rgba(243,240,232,.8)'; ctx.textAlign = 'left';
       ctx.fillText(hint.toUpperCase(), MXV + r + 12, MYV + 4);
     }
-    return { sounds: flush(), hover: !!HOVER };
+    return { sounds: flush(), hover: !!HOVER, cursor: drawn };
   }
 
   function failLog(id, age) {
