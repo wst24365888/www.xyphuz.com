@@ -23,11 +23,10 @@ a { color: inherit; }
 /* ---------- the film / world ---------- */
 .stage { position: fixed; inset: 0; touch-action: none; }
 .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.mode-site .stage { cursor: crosshair; }
-.mode-site .stage.dragging { cursor: crosshair; }
+.mode-site .stage { cursor: grab; }
+.mode-site .stage.dragging { cursor: grabbing; }
 .mode-site.fine-pointer .stage, .mode-site.fine-pointer .stage.dragging { cursor: none; } /* the canvas draws its own */
-#clear { display: none; }
-.mode-site.has-ink #clear { display: inline-flex; }
+
 
 /* ---------- top bar ---------- */
 .bar {

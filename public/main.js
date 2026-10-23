@@ -53,7 +53,7 @@
     t0: 0, paused: false, pauseT: 0,
     cur: 0, prev: 0, switchAt: -1e9, homeAt: 0,
     mx: 0, my: 0, ui: 0, flashAt: -1e9,
-    drag: null, last: 0, spin: 0.6, look: [0, 0], cursor: false, pick: null, sel: -1, failId: -1, failAt: -1e9, dir: 1, wheelAt: 0,
+    drag: null, last: 0, look: [0, 0], cursor: false, pick: null, sel: -1, failId: -1, failAt: -1e9, dir: 1, wheelAt: 0,
   };
 
   /* ---------- sizing ---------- */
@@ -147,9 +147,10 @@
     syncSound();
   }
 
-  /* ---------- pointer: draw in 3D, or click a service / region ---------- */
+  /* ---------- pointer: grab the world ----------
+   * Press on a service to move it, on a region to break it, anywhere else to
+   * spin the whole formation — let go mid-drag and it keeps spinning. */
   const ndc = (e) => [(e.clientX / window.innerWidth) * 2 - 1, 1 - (e.clientY / window.innerHeight) * 2];
-  function syncInk() { root.classList.toggle('has-ink', reel.inked); }
   stage.addEventListener('pointermove', (e) => {
     [st.mx, st.my] = ndc(e);
     st.cursor = e.pointerType === 'mouse';
@@ -157,7 +158,7 @@
     if (!st.drag) return;
     st.drag.d += Math.abs(e.clientX - st.drag.x) + Math.abs(e.clientY - st.drag.y);
     st.drag.x = e.clientX; st.drag.y = e.clientY;
-    if (st.drag.ink) audio.pen(reel.addPoint([st.mx, st.my], now() / 1000));
+    reel.grabMove([st.mx, st.my], now() / 1000);
   });
   stage.addEventListener('pointerdown', (e) => {
     if (st.mode !== 'site' && st.mode !== 'gate') return;
@@ -165,10 +166,10 @@
     if (st.mode === 'gate' && !audio.enabled) toggleSound();
     if (st.mode !== 'site') return;
     [st.mx, st.my] = ndc(e);
-    // pressing on a service or a region is a click; anywhere else starts a stroke
-    const ink = !st.pick;
-    st.drag = { x: e.clientX, y: e.clientY, d: 0, ink };
-    if (ink) reel.beginStroke([st.mx, st.my], now() / 1000);
+    const pk = st.pick;
+    st.drag = { x: e.clientX, y: e.clientY, d: 0, pick: pk };
+    reel.grabStart(pk && pk.kind === 'node' ? 'node' : 'spin', [st.mx, st.my], now() / 1000, pk ? pk.i : -1);
+    audio.ui('grab');
     try { stage.setPointerCapture(e.pointerId); } catch (err) { /* pointer already gone */ }
     stage.classList.add('dragging');
   });
@@ -176,19 +177,15 @@
     const d = st.drag;
     if (!d) return;
     st.drag = null; stage.classList.remove('dragging');
-    if (d.ink) {
-      if (reel.endStroke(now() / 1000)) audio.ui('ink');
-      syncInk();
-      return;
-    }
-    const pk = st.pick;
-    if (!pk || d.d > 12) return;
-    if (pk.kind === 'node') { st.sel = st.sel === pk.i ? -1 : pk.i; audio.ui('click'); }
-    if (pk.kind === 'region') { st.failId = pk.i; st.failAt = now(); audio.ui('fail'); }
+    const fling = reel.grabEnd();
+    const pk = d.pick;
+    if (d.d <= 8 && pk && pk.kind === 'node') { st.sel = st.sel === pk.i ? -1 : pk.i; audio.ui('click'); return; }
+    if (d.d <= 8 && pk && pk.kind === 'region') { st.failId = pk.i; st.failAt = now(); audio.ui('fail'); return; }
+    if (pk && pk.kind === 'node') audio.ui('drop');
+    else if (fling > 0.15) audio.ui('fling', fling);
   };
   stage.addEventListener('pointerup', endDrag);
   stage.addEventListener('pointercancel', endDrag);
-  function clearInk() { reel.clearInk(now() / 1000); syncInk(); audio.ui('scatter'); }
   stage.addEventListener('wheel', (e) => {
     if (st.mode !== 'site' || Math.abs(e.deltaY) < 24 || now() - st.wheelAt < 1100) return;
     st.wheelAt = now(); go(st.cur + (e.deltaY > 0 ? 1 : -1));
@@ -201,7 +198,6 @@
   $('replay').addEventListener('click', () => startIntro(audio.enabled && !audio.muted));
   $('sound').addEventListener('click', toggleSound);
   $('brand').addEventListener('click', () => go(0));
-  $('clear').addEventListener('click', clearInk);
   document.addEventListener('keydown', (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase();
@@ -214,7 +210,6 @@
       else if (k === 'arrowleft') go(st.cur - 1);
       else if (/^[1-5]$/.test(k)) go(+k - 1);
       else if (k === 'r') startIntro(audio.enabled && !audio.muted);
-      else if (k === 'c') clearInk();
     }
   });
   document.addEventListener('visibilitychange', () => {
@@ -242,20 +237,19 @@
     }
     st.ui += ((st.mode === 'site' ? 1 : 0) - st.ui) * 0.045;
     const dt = Math.min(0.1, (n - (st.last || n)) / 1000); st.last = n;
-    // the globe slows right down while you're aiming at a region
-    st.spin += dt * (st.pick && st.pick.kind === 'region' ? 0.015 : reduced ? 0 : 0.22);
     st.look[0] += (st.mx - st.look[0]) * 0.05; st.look[1] += (st.my - st.look[1]) * 0.05;
     const fl = Math.max(0, 1 - (n - st.flashAt) / 380);
-    const drawing = !!(st.drag && st.drag.ink);
     const pick = reel.renderHome({
-      gate: st.mode === 'gate', cur: st.cur, prev: st.prev, now: n / 1000,
+      gate: st.mode === 'gate', cur: st.cur, prev: st.prev, dt,
       since: (n - st.switchAt) / 1000, clock: st.mode === 'gate' ? n / 1000 : 3 + (n - st.homeAt) / 1000,
       mouse: [st.mx, st.my], ui: st.ui, flash: 0.8 * fl * fl, still: reduced, look: reduced ? [0, 0] : st.look, cursor: st.cursor,
-      drawing, spin: st.spin, sel: st.sel, failId: st.failId, failAge: (n - st.failAt) / 1000, dir: st.dir,
+      sel: st.sel, failId: st.failId, failAge: (n - st.failAt) / 1000, dir: st.dir,
     });
-    if (!st.drag) st.pick = pick; // don't let a stroke turn into a click halfway through
+    if (!st.drag) st.pick = pick; // what you pressed on stays what you're holding
     stage.classList.toggle('picking', !!st.pick);
   }
+
+  if (query.has('debug')) window.__xy = { st, reel }; // inspection hook for development
 
   /* ---------- boot ---------- */
   setMode('gate');

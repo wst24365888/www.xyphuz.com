@@ -173,13 +173,15 @@
       const hx = 0.55, hy = 0.2, hz = 0.35, f = Math.floor(r() * 6);
       let x = (r() * 2 - 1) * hx, y = (r() * 2 - 1) * hy, z = (r() * 2 - 1) * hz;
       if (f === 0) x = hx; else if (f === 1) x = -hx; else if (f === 2) y = hy; else if (f === 3) y = -hy; else if (f === 4) z = hz; else z = -hz;
-      put(nd.p[0] + x, nd.p[1] + y, nd.p[2] + z, nd.li === 1 ? col(1, 0.5 + r() * 0.4) : col(0, 0.35 + r() * 0.4));
+      // F.x = node id + 1, so the engine can move a service's particles when it's dragged
+      put(nd.p[0] + x, nd.p[1] + y, nd.p[2] + z, nd.li === 1 ? col(1, 0.5 + r() * 0.4) : col(0, 0.35 + r() * 0.4), (i % NODES.length) + 1);
     }
     const ne = s.count(0.4);
     for (let i = 0; i < ne; i++) {
       const ei = i % EDGES.length, [a, b] = EDGES[ei], A = NODES[a].p, B = NODES[b].p;
       const j = () => (r() - 0.5) * 0.05;
-      put(A[0] + j(), A[1] + j(), A[2] + j(), ei % 3 === 0 ? col(2, 0.45 + r() * 0.45) : col(1, 0.35 + r() * 0.5), B[0] + j(), B[1] + j(), B[2] + j(), 1);
+      // flows carry both endpoint ids in the code's fraction, so they follow moved services
+      put(A[0] + j(), A[1] + j(), A[2] + j(), ei % 3 === 0 ? col(2, 0.45 + r() * 0.45) : col(1, 0.35 + r() * 0.5), B[0] + j(), B[1] + j(), B[2] + j(), 1 + (1 + a * 16 + b) / 1000);
     }
     dustInto(s, s.left());
     return s;
