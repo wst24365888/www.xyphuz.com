@@ -21,30 +21,35 @@
       title: 'Software architect <em>with a motion designer’s eye.</em>',
       body: 'I build enterprise systems for giga-fab semiconductor manufacturing, and the cloud infrastructure underneath them. I started out in motion and frontend design — which is why this whole site is a film.',
       tags: ['Software architecture', 'Enterprise systems', 'Cloud infrastructure'],
+      hint: 'Sign it yourself — start at the glowing dot',
     },
     {
       nav: 'Engineer', kicker: '[ 01 ]  Software engineer',
       title: 'Code that <em>holds up.</em>',
       body: 'Tested, observable and boring in the best way — so the interesting parts can be bold. Every system I ship is meant to be read, operated and changed by the next person.',
       tags: ['Testing', 'CI / CD', 'Observability', 'Performance', 'Code review'],
+      hint: 'A bug just landed in the code — find it and click it',
     },
     {
       nav: 'Architect', kicker: '[ 02 ]  Software architect',
       title: 'Systems that scale, <em>by design.</em>',
       body: 'Clear boundaries, event-driven services and data that stays consistent under load. Architecture is the set of decisions that are expensive to change — I make them on purpose.',
       tags: ['Distributed systems', 'Event-driven', 'Domain-driven design', 'API design'],
+      hint: 'Traffic keeps rising — click the saturated service to scale it',
     },
     {
       nav: 'Enterprise', kicker: '[ 03 ]  Enterprise systems',
       title: 'Software at <em>giga-fab scale.</em>',
       body: 'Manufacturing systems for semiconductor fabs that never stop: dispatching, scheduling, equipment integration and process control — running 24/7, where downtime is not an option.',
       tags: ['MES', 'Dispatching', 'Scheduling', 'SPC', 'AMHS'],
+      hint: 'Tools go idle — click one to dispatch a lot',
     },
     {
       nav: 'Cloud', kicker: '[ 04 ]  Cloud infrastructure',
       title: 'Infrastructure that <em>heals itself.</em>',
       body: 'Multi-region platforms, codified end to end and observed everywhere — designed to fail over instead of fall over.',
       tags: ['Kubernetes', 'Infrastructure as code', 'Multi-region', 'SRE'],
+      hint: 'Spin the planet — click a region to take it down',
     },
   ];
 
@@ -53,7 +58,7 @@
     t0: 0, paused: false, pauseT: 0,
     cur: 0, prev: 0, switchAt: -1e9, homeAt: 0,
     mx: 0, my: 0, ui: 0, flashAt: -1e9,
-    drag: null, last: 0, look: [0, 0], cursor: false, pick: null, sel: -1, failId: -1, failAt: -1e9, dir: 1, wheelAt: 0,
+    drag: false, last: 0, look: [0, 0], cursor: false, dir: 1, wheelAt: 0,
   };
 
   /* ---------- sizing ---------- */
@@ -122,6 +127,7 @@
     const fill = () => {
       $('p-kicker').textContent = s.kicker; $('p-title').innerHTML = s.title; $('p-body').textContent = s.body;
       $('p-tags').innerHTML = s.tags.map((t) => `<li>${t}</li>`).join('');
+      $('p-hint').textContent = s.hint;
       p.classList.remove('swap');
     };
     if (instant) { fill(); return; }
@@ -132,7 +138,6 @@
     if (st.mode !== 'site' || i === st.cur) return;
     st.dir = i > st.cur ? 1 : -1;
     st.prev = st.cur; st.cur = i; st.switchAt = now();
-    st.sel = -1;
     audio.ui('click');
     paint(i);
   }
@@ -147,18 +152,14 @@
     syncSound();
   }
 
-  /* ---------- pointer: grab the world ----------
-   * Press on a service to move it, on a region to break it, anywhere else to
-   * spin the whole formation — let go mid-drag and it keeps spinning. */
+  /* ---------- pointer: each chapter's job lives in the reel; we just forward ---------- */
   const ndc = (e) => [(e.clientX / window.innerWidth) * 2 - 1, 1 - (e.clientY / window.innerHeight) * 2];
+  const play = (list) => (list || []).forEach(([k, a]) => (k === 'pen' ? audio.pen(a) : audio.ui(k, a)));
   stage.addEventListener('pointermove', (e) => {
     [st.mx, st.my] = ndc(e);
     st.cursor = e.pointerType === 'mouse';
     root.classList.toggle('fine-pointer', st.cursor);
-    if (!st.drag) return;
-    st.drag.d += Math.abs(e.clientX - st.drag.x) + Math.abs(e.clientY - st.drag.y);
-    st.drag.x = e.clientX; st.drag.y = e.clientY;
-    reel.grabMove([st.mx, st.my], now() / 1000);
+    if (st.mode === 'site') play(reel.pointerMove([st.mx, st.my], now() / 1000));
   });
   stage.addEventListener('pointerdown', (e) => {
     if (st.mode !== 'site' && st.mode !== 'gate') return;
@@ -166,23 +167,15 @@
     if (st.mode === 'gate' && !audio.enabled) toggleSound();
     if (st.mode !== 'site') return;
     [st.mx, st.my] = ndc(e);
-    const pk = st.pick;
-    st.drag = { x: e.clientX, y: e.clientY, d: 0, pick: pk };
-    reel.grabStart(pk && pk.kind === 'node' ? 'node' : 'spin', [st.mx, st.my], now() / 1000, pk ? pk.i : -1);
-    audio.ui('grab');
+    st.drag = true;
+    play(reel.pointerDown([st.mx, st.my], now() / 1000));
     try { stage.setPointerCapture(e.pointerId); } catch (err) { /* pointer already gone */ }
     stage.classList.add('dragging');
   });
   const endDrag = () => {
-    const d = st.drag;
-    if (!d) return;
-    st.drag = null; stage.classList.remove('dragging');
-    const fling = reel.grabEnd();
-    const pk = d.pick;
-    if (d.d <= 8 && pk && pk.kind === 'node') { st.sel = st.sel === pk.i ? -1 : pk.i; audio.ui('click'); return; }
-    if (d.d <= 8 && pk && pk.kind === 'region') { st.failId = pk.i; st.failAt = now(); audio.ui('fail'); return; }
-    if (pk && pk.kind === 'node') audio.ui('drop');
-    else if (fling > 0.15) audio.ui('fling', fling);
+    if (!st.drag) return;
+    st.drag = false; stage.classList.remove('dragging');
+    play(reel.pointerUp(now() / 1000));
   };
   stage.addEventListener('pointerup', endDrag);
   stage.addEventListener('pointercancel', endDrag);
@@ -239,14 +232,13 @@
     const dt = Math.min(0.1, (n - (st.last || n)) / 1000); st.last = n;
     st.look[0] += (st.mx - st.look[0]) * 0.05; st.look[1] += (st.my - st.look[1]) * 0.05;
     const fl = Math.max(0, 1 - (n - st.flashAt) / 380);
-    const pick = reel.renderHome({
-      gate: st.mode === 'gate', cur: st.cur, prev: st.prev, dt,
+    const out = reel.renderHome({
+      gate: st.mode === 'gate', cur: st.cur, prev: st.prev, dt, now: n / 1000,
       since: (n - st.switchAt) / 1000, clock: st.mode === 'gate' ? n / 1000 : 3 + (n - st.homeAt) / 1000,
-      mouse: [st.mx, st.my], ui: st.ui, flash: 0.8 * fl * fl, still: reduced, look: reduced ? [0, 0] : st.look, cursor: st.cursor,
-      sel: st.sel, failId: st.failId, failAge: (n - st.failAt) / 1000, dir: st.dir,
+      mouse: [st.mx, st.my], ui: st.ui, flash: 0.8 * fl * fl, still: reduced, look: reduced ? [0, 0] : st.look, cursor: st.cursor, dir: st.dir,
     });
-    if (!st.drag) st.pick = pick; // what you pressed on stays what you're holding
-    stage.classList.toggle('picking', !!st.pick);
+    play(out && out.sounds);
+    stage.classList.toggle('picking', !!(out && out.hover));
   }
 
   if (query.has('debug')) window.__xy = { st, reel }; // inspection hook for development

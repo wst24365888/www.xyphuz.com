@@ -11,6 +11,7 @@
   'use strict';
 
   const SIDE = 360, N = SIDE * SIDE, TAU = Math.PI * 2;
+  let LETTERS = [], TOOLS = []; // filled while building, for the site's interactions
   const SIGN_SCALE = 2.2;
 
   function rng(seed) {
@@ -127,15 +128,25 @@
     const g = c.getContext('2d');
     g.fillStyle = '#fff'; g.textAlign = 'center';
     g.font = '700 270px "Space Grotesk", Arial, sans-serif';
-    g.fillText('SOFTWARE', W / 2, 400); g.fillText('ENGINEER', W / 2, 720);
-    const d = g.getImageData(0, 0, W, H).data, pix = [];
-    for (let y = 0; y < H; y += 1) for (let x = 0; x < W; x += 1) if (d[(y * W + x) * 4 + 3] > 127) pix.push(x, y);
-    const np = pix.length / 2, sc = 13 / W;
+    const lines = ['SOFTWARE', 'ENGINEER'];
+    g.fillText(lines[0], W / 2, 400); g.fillText(lines[1], W / 2, 720);
+    // where each letter starts, so every particle knows which letter it belongs to
+    const starts = lines.map((str) => { const x0 = W / 2 - g.measureText(str).width / 2; return [...str].map((_, i) => x0 + g.measureText(str.slice(0, i)).width); });
+    const letterOf = (x, y) => { const li = y < 470 ? 0 : 1, st = starts[li]; let i = 0; while (i < st.length - 1 && x >= st[i + 1]) i++; return li * 8 + i; };
+    const d = g.getImageData(0, 0, W, H).data, pix = [], sum = Array.from({ length: 16 }, () => [0, 0, 0]);
+    for (let y = 0; y < H; y += 1) for (let x = 0; x < W; x += 1) {
+      if (d[(y * W + x) * 4 + 3] <= 127) continue;
+      const id = letterOf(x, y);
+      pix.push(x, y, id); sum[id][0] += x; sum[id][1] += y; sum[id][2]++;
+    }
+    const np = pix.length / 3, sc = 13 / W;
+    LETTERS = sum.map(([sx, sy, n], i) => ({ ch: lines[i >> 3][i & 7], p: [(sx / n - W / 2) * sc, -(sy / n - 470) * sc, 0] }));
     const nt = s.count(0.76);
     for (let i = 0; i < nt; i++) {
-      const k = Math.floor(r() * np) * 2, x = pix[k] + r(), y = pix[k + 1] + r();
+      const k = Math.floor(r() * np) * 3, x = pix[k] + r(), y = pix[k + 1] + r();
       const top = y < 470;
-      put((x - W / 2) * sc, -(y - 470) * sc, (r() - 0.5) * 0.55, top ? col(0, 0.35 + r() * 0.45) : col(1, 0.4 + r() * 0.5));
+      // F.y = letter id + 1 (bug hunt)
+      put((x - W / 2) * sc, -(y - 470) * sc, (r() - 0.5) * 0.55, top ? col(0, 0.35 + r() * 0.45) : col(1, 0.4 + r() * 0.5), 0, pix[k + 2] + 1);
     }
     const nr = s.count(0.2);
     for (let i = 0; i < nr; i++) {
@@ -219,14 +230,15 @@
     const s = formation(7), { r, put } = s;
     const tools = [];
     for (let rr = 0; rr < 4; rr++) for (let c = 0; c < 6; c++) tools.push([-5.5 + c * 2.2, -3.6 + rr * 2.4, 0.6 + r() * 0.6]);
+    TOOLS = tools.map(([cx, cz, h]) => [cx, h, cz]);
     const nt = s.count(0.3);
     for (let i = 0; i < nt; i++) {
-      const [cx, cz, h] = tools[i % tools.length], w = 0.65, d = 0.5;
+      const ti = i % tools.length, [cx, cz, h] = tools[ti], w = 0.65, d = 0.5;
       const f = Math.floor(r() * 5);
       let x = (r() * 2 - 1) * w, y = r() * h, z = (r() * 2 - 1) * d;
       if (f === 0) y = h; else if (f === 1) x = w; else if (f === 2) x = -w; else if (f === 3) z = d; else z = -d;
       const lit = f === 0 && Math.hypot(x, z) < 0.12;
-      put(cx + x, y, cz + z, lit ? col(1, 0.95) : col(0, f === 0 ? 0.55 + r() * 0.3 : 0.25 + r() * 0.25));
+      put(cx + x, y, cz + z, lit ? col(1, 0.95) : col(0, f === 0 ? 0.55 + r() * 0.3 : 0.25 + r() * 0.25), 0, ti + 1); // F.y = tool id + 1
     }
     const ng = s.count(0.12);
     for (let i = 0; i < ng; i++) {
@@ -356,6 +368,7 @@
 
   window.Shapes = {
     SIDE, N, SIGN_SCALE, NODES, EDGES, LAYERS, REGIONS, GR, dirOf,
+    get LETTERS() { return LETTERS; }, get TOOLS() { return TOOLS; },
     IDX: { DUST: 0, SIGN: 1, HALO: 2, TEXT: 3, ARCH: 4, WAFER: 5, FAB: 6, GLOBE: 7, TUNNEL: 8, WORD: 9 },
     WORDS: WORDS.map((w) => w[0]),
     build() { return [DUST(), SIGN(), HALO(), TEXT(), ARCH(), WAFER(), FAB(), GLOBE(), TUNNEL()].map(({ P, F }) => ({ P, F })).concat(wordShapes()); },

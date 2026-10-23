@@ -45,6 +45,7 @@ uniform mat4 uVP, uMA, uMB;
 uniform float uMix, uSpread, uTurb, uTime, uSignT, uSignMode, uScan, uFail, uFailId, uPull, uSize, uFocal, uFocus, uAperture, uGain, uBurst;
 uniform vec3 uPullC, uMouse; uniform float uMouseR, uMouseF, uWell;
 uniform vec3 uNodeA[12], uNodeB[12]; // dragged services, per formation side
+uniform float uHot[24], uOk[24];        // site: groups in trouble / just fixed (current formation only)
 out vec3 vCol; out float vA; out float vSoft;
 const int SIDE = ${SIDE};
 float h1(float n) { return fract(sin(n * 127.1) * 43758.5453); }
@@ -99,6 +100,27 @@ vec3 evalP(vec4 P, vec4 F, mat4 M, float seed, int side, out vec3 col, out float
   } else if (code == 8.0) {                // differentially rotating disc
     float r = length(P.xz), a = atan(P.z, P.x) + uTime * (1.4 / (0.5 + r * 0.3));
     p = vec3(cos(a) * r, P.y, sin(a) * r);
+  }
+  // groups: architecture nodes (F.x), letters and tools (F.y); flows inherit their endpoints' trouble
+  if (side == 1) {
+    float hot = 0.0, ok = 0.0;
+    if (code == 0.0) {
+      float g = F.y > 0.5 ? F.y - 1.0 : (F.x > 0.5 ? F.x - 1.0 : -1.0);
+      if (g >= 0.0) { int gi = int(g + 0.5); hot = uHot[gi]; ok = uOk[gi]; }
+    } else if (code == 1.0) {
+      float ids = floor(fract(F.w) * 1000.0 + 0.5) - 1.0;
+      if (ids >= 0.0) {
+        int ia = int(floor(ids / 16.0)), ib = int(mod(ids, 16.0));
+        hot = max(uHot[ia], uHot[ib]) * 0.85; ok = max(uOk[ia], uOk[ib]) * 0.7;
+      }
+    }
+    if (hot > 0.0) {
+      vec3 warn = mix(vec3(1.0, 0.72, 0.2), vec3(1.0, 0.3, 0.18), smoothstep(0.5, 1.0, hot));
+      col = mix(col, warn, min(1.0, hot * 1.4));
+      bri = max(bri, 0.35) * (1.0 + hot * (1.0 + 0.7 * sin(uTime * 14.0 + seed * 30.0)));
+      p += vec3(sin(uTime * 47.0 + seed * 91.0), sin(uTime * 53.0 + seed * 37.0), sin(uTime * 41.0 + seed * 13.0)) * hot * hot * 0.05;
+    }
+    if (ok > 0.0) { col = mix(col, vec3(0.83, 1.0, 0.23), ok); bri = max(bri, 0.4) * (1.0 + ok * 2.2); }
   }
   return (M * vec4(p, 1.0)).xyz;
 }
@@ -429,6 +451,8 @@ void main() {
       const mo = f.mouse || { p: [0, 0, 0], r: 1, f: 0 };
       const zero = new Float32Array(36);
       gl.uniform3fv(loc('uNodeA[0]'), p.nodesA || zero); gl.uniform3fv(loc('uNodeB[0]'), p.nodesB || zero);
+      const z24 = new Float32Array(24);
+      gl.uniform1fv(loc('uHot[0]'), p.hot || z24); gl.uniform1fv(loc('uOk[0]'), p.ok || z24);
       f3('uMouse', mo.p); f1('uMouseR', Math.max(0.01, mo.r)); f1('uMouseF', mo.f); f1('uWell', mo.well || 0);
       f1('uSize', p.size); f1('uFocal', focal); f1('uFocus', f.focus); f1('uAperture', f.aperture); f1('uGain', p.gain);
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.depthMask(false);

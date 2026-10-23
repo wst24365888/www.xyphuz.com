@@ -24,7 +24,7 @@
   // Virtual overlay space, recomputed every frame from the canvas size.
   let W = 1920, H = 1080, PORT = false, M = 84, TOP = 150, FRAME = 1, SCALE = 1;
 
-  const C = { ink: '#f3f0e8', dim: '#8a8896', line: '#26262f', lime: '#d4ff3a', coral: '#ff4d2e', blue: '#6f8cff' };
+  const C = { ink: '#f3f0e8', dim: '#8a8896', line: '#26262f', lime: '#d4ff3a', coral: '#ff4d2e', blue: '#6f8cff', yellow: '#ffd23a' };
   const LIME = [0.83, 1, 0.23];
   const FD = '"Space Grotesk", "Helvetica Neue", Arial, sans-serif';
   const FM = '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace';
@@ -580,7 +580,7 @@
     { id: 'xyphuz', shape: I.SIGN, target: [0, 0.5, 0], yaw: 0.045, pitch: 0, dist: 11.51, fov: 35, gain: 0.16, mark: true, springYaw: true },
     { id: 'engineer', shape: I.TEXT, target: [0, 0.2, 0], yaw: -0.15, pitch: 0.08, dist: 15.5, fov: 40, gain: 1.5 },
     { id: 'architect', shape: I.ARCH, target: [0, -0.3, 0], yaw: -0.55, pitch: 0.5, dist: 16.5, fov: 38, gain: 1.0 },
-    { id: 'enterprise', shape: I.FAB, target: [-1.2, 0.6, 0], yaw: 0.75, pitch: 0.58, dist: 12.5, fov: 40, gain: 1.8, pivot: [0, 0.6, 0] },
+    { id: 'enterprise', shape: I.FAB, target: [0, 0.3, 0.4], yaw: 0.55, pitch: 0.82, dist: 17.5, fov: 40, gain: 1.9 },
     { id: 'cloud', shape: I.GLOBE, target: [0, 0, 0], yaw: 0.3, pitch: 0.18, dist: 20, fov: 38, gain: 1.0 },
   ];
   const GATE = { shape: I.DUST, target: [0, 0, -3], yaw: 0, pitch: 0.12, dist: 16, fov: 40, gain: 1.15 };
@@ -592,110 +592,240 @@
     Redis: 'hot state at memory speed', Lakehouse: 'years of history, still queryable',
     Kafka: 'every event, ordered and replayable', Workers: 'scale out when the floor gets busy',
   };
+  const BUGS = [
+    'race condition in dispatch retry', 'off-by-one in lot pagination', 'null lot id from tool gateway', 'N+1 query in SPC chart',
+    'timezone bug in shift report', 'memory leak in event consumer', 'flaky test: scheduler preemption', 'unhandled promise in recipe sync',
+    'stale cache after recipe update', 'deadlock in equipment state machine',
+  ];
   const near = (pts, mx, my, r) => {
     let best = -1, bd = r;
     pts.forEach((q, i) => { if (!q) return; const d = Math.hypot(q[0] - mx, q[1] - my); if (d < bd) { bd = d; best = i; } });
     return best;
   };
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const pick1 = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-  /* ---------- direct manipulation: the world has weight ----------
-   * Every section's formation can be grabbed and flung (inertia, damping,
-   * springs); in the architecture you can grab a single service and move it,
-   * and its connections — packets and all — reroute live. */
-  const ROT = HOME.map(() => ({ y: 0, x: 0, vy: 0, vx: 0 }));
-  const NOFF = SH.NODES.map(() => ({ p: [0, 0, 0], v: [0, 0, 0], t: [0, 0, 0] }));
-  let GRAB = null, LAST = null;
+  /* ================================================================
+   * The site's chapters each hand you a job from that role:
+   *   00 sign the mark yourself · 01 hunt the bug · 02 scale the bottleneck
+   *   03 dispatch the idle tool · 04 break a region and watch it heal
+   * ================================================================ */
+  let SEC = -1, ENTER = 0, NOW = 0, MXV = 0, MYV = 0, PD = null, HOVER = null, LASTEYE = null;
+  const LOG = [];
+  function log(text, col = C.ink) { LOG.push({ t: NOW, text, col }); if (LOG.length > 4) LOG.shift(); }
+  let SOUND = []; // sounds the page should play this frame
+  const sfx = (k, a) => SOUND.push([k, a]);
 
-  function formM(h, c, lk, rot) {
-    const r = rot || { y: 0, x: 0 };
-    if (h.shape === I.SIGN) return M4.mul(signM(c, lk, r), M4.s(1.04));
-    if (h.shape === I.DUST) return M4.ry(c * 0.03);
-    const pv = h.pivot || [0, 0, 0];
-    return M4.mul(M4.mul(M4.t(pv[0], pv[1], pv[2]), M4.mul(M4.ry(r.y), M4.rx(r.x))), M4.t(-pv[0], -pv[1], -pv[2]));
+  // ---- 00 · sign it yourself ----
+  const SIGN_STILL = M4.mul(M4.t(0, 1.05, 0), M4.s(0.8));
+  const invS = (u) => 0.5 - Math.sin(Math.asin(1 - 2 * clamp(u, 1e-4, 1 - 1e-4)) / 3);
+  let TPTS = null;
+  const tracePts = () => TPTS || (TPTS = MK.STROKES.map((s) => s.pts.map((p) => M4.apply(SIGN_STILL, toWorld(p)))));
+  const TR = { on: false, s: 0, k: 0, active: false, unwrite: -9, done: -9, last: 0 };
+  function traceT() {
+    if (!TR.on) return 4;
+    if (TR.s >= 2) return 4;
+    const n = tracePts()[TR.s].length, [a, b] = MK.STROKE_T[TR.s];
+    return a + (b - a) * invS(TR.k / (n - 1));
   }
-  function add3(a, b) { return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]; }
-  const nodeWorld = (i, m) => M4.apply(m, add3(SH.NODES[i].p, NOFF[i].p));
-  const nodeFlat = () => { const a = new Float32Array(36); NOFF.forEach((n, i) => { a[i * 3] = n.p[0]; a[i * 3 + 1] = n.p[1]; a[i * 3 + 2] = n.p[2]; }); return a; };
+  const nibWorld = () => tracePts()[Math.min(TR.s, 1)][TR.s >= 2 ? tracePts()[1].length - 1 : TR.k];
+  const traceTarget = () => (!TR.on || TR.s >= 2 ? tracePts()[0][0] : tracePts()[TR.s][TR.k]);
 
-  function physics(dt, cur, pickRegion) {
-    ROT.forEach((r, k) => {
-      const held = GRAB && GRAB.kind === 'spin' && GRAB.sec === k;
-      if (!held) {
-        r.y += r.vy * dt; r.x += r.vx * dt;
+  // ---- 01 · bug hunt ----
+  const BG = { id: -1, at: 0, next: 0, fixed: 0, escaped: 0, ttf: [], okId: -1, okAt: -9, badId: -1, badAt: -9 };
+  // ---- 02 · bottleneck ----
+  const LD = { heat: new Float32Array(12), hot: [], next: 0, scale: new Array(12).fill(1), okId: -1, okAt: -9, rps: 12000, sel: -1 };
+  const LOADABLE = [3, 4, 5, 6, 7, 8, 10, 11];
+  // ---- 03 · dispatch ----
+  const FB = { state: new Array(24).fill(0), idleAt: new Array(24).fill(0), next: 0, done: 0, idleSum: 0, okId: -1, okAt: -9, carriers: [], lot: 427 };
+  // ---- 04 · cloud ----
+  const CL = { rot: { y: 0.6, x: 0, vy: 0, vx: 0 }, fail: -1, failAt: -99 };
+
+  function enterSection(k) {
+    LOG.length = 0;
+    if (k === 0) { TR.on = false; TR.active = false; }
+    if (k === 1) { BG.id = -1; BG.next = NOW + 1.2; }
+    if (k === 2) { LD.hot = []; LD.next = NOW + 1.6; }
+    if (k === 3) { FB.next = NOW + 0.8; }
+  }
+
+  function step(k, dt) {
+    if (k === 1) {
+      if (BG.id < 0 && NOW >= BG.next) {
+        let id; do { id = Math.floor(Math.random() * 16); } while (id === BG.okId);
+        BG.id = id; BG.at = NOW; BG.msg = pick1(BUGS);
+        log(`✗ ${BG.msg}`, C.coral); sfx('bug');
+      }
+      if (BG.id >= 0 && NOW - BG.at > 7) {
+        BG.escaped++; log('✗ escaped to production — rolled back', C.coral); sfx('wrong');
+        BG.id = -1; BG.next = NOW + 1.2;
+      }
+    }
+    if (k === 2) {
+      LD.rps = Math.min(64000, LD.rps + dt * 900);
+      if (!LD.hot.length && NOW >= LD.next) {
+        const pool = LOADABLE.slice().sort((a, b) => LD.scale[a] - LD.scale[b] || Math.random() - 0.5);
+        const id = pool[Math.floor(Math.random() * 3)];
+        LD.hot.push({ id, at: NOW, cascaded: false });
+        log(`▲ ${SH.NODES[id].lab} saturated — p99 climbing`, C.coral); sfx('hot');
+      }
+      LD.hot.forEach((h) => {
+        if (h.cascaded || NOW - h.at < 6 || LD.hot.length > 1) return;
+        const nb = SH.EDGES.filter(([a, b]) => a === h.id || b === h.id).map(([a, b]) => (a === h.id ? b : a)).filter((n) => LOADABLE.includes(n) && !LD.hot.some((x) => x.id === n));
+        h.cascaded = true;
+        if (nb.length) { const id = pick1(nb); LD.hot.push({ id, at: NOW, cascaded: true }); log(`✗ timeouts cascading → ${SH.NODES[id].lab}`, C.coral); sfx('hot'); }
+      });
+      for (let i = 0; i < 12; i++) {
+        const tgt = LD.hot.some((h) => h.id === i) ? 1 : 0;
+        LD.heat[i] += (tgt - LD.heat[i]) * Math.min(1, dt * (tgt ? 1.4 : 5));
+      }
+    }
+    if (k === 3) {
+      const idle = FB.state.filter((s) => s === 1).length;
+      if (NOW >= FB.next && idle < 4) {
+        const busy = FB.state.map((s, i) => (s === 0 ? i : -1)).filter((i) => i >= 0);
+        const i = pick1(busy);
+        FB.state[i] = 1; FB.idleAt[i] = NOW; sfx('idle');
+        FB.next = NOW + rnd(0.9, 2.2);
+      }
+      FB.carriers = FB.carriers.filter((c) => {
+        if (NOW - c.t0 < 0.75) return true;
+        FB.state[c.tool] = 0; FB.okId = c.tool; FB.okAt = NOW; sfx('land');
+        return false;
+      });
+    }
+    if (k === 4) {
+      const r = CL.rot;
+      if (!(PD && PD.mode === 'spin')) {
+        r.y += (r.vy + 0.22 * (HOVER && HOVER.kind === 'region' ? 0.06 : 1)) * dt;
         r.vy *= Math.exp(-dt * 1.4);
-        r.vx += (-r.x * 14 - r.vx * 5) * dt;                     // pitch always settles back
-        if (HOME[k].springYaw) r.vy += -r.y * 7 * dt - r.vy * 2.5 * dt; // the mark turns back to face you
+        r.vx += (-r.x * 14 - r.vx * 5) * dt; r.x += r.vx * dt;
       }
-      if (HOME[k].shape === I.GLOBE && !held) r.y += dt * 0.22 * (pickRegion && k === cur ? 0.06 : 1);
-    });
-    NOFF.forEach((n, i) => {
-      const dragged = GRAB && GRAB.kind === 'node' && GRAB.i === i;
-      const k = dragged ? 260 : 140, d = dragged ? 26 : 9; // a bouncy landing when you let go
-      for (let a = 0; a < 3; a++) {
-        n.v[a] += ((n.t[a] - n.p[a]) * k - n.v[a] * d) * dt;
-        n.p[a] += n.v[a] * dt;
-      }
-    });
+    }
   }
 
-  // ray from the last home camera through an NDC point
-  function ray(ndc) {
-    const L = LAST, ox = (ndc[0] - L.shift[0]) * L.th * (W / H), oy = (ndc[1] - L.shift[1]) * L.th;
-    return norm([L.fw[0] + L.rt[0] * ox + L.up[0] * oy, L.fw[1] + L.rt[1] * ox + L.up[1] * oy, L.fw[2] + L.rt[2] * ox + L.up[2] * oy]);
+  // world → screen for the current section's interactive things
+  function targets(k) {
+    if (k === 1) return SH.LETTERS.map((l) => l.p);
+    if (k === 2) return SH.NODES.map((n) => n.p);
+    if (k === 3) return SH.TOOLS;
+    if (k === 4) { const m = cloudM(); return SH.REGIONS.map((rg) => { const d = SH.dirOf(...rg); return M4.apply(m, [d[0] * SH.GR, d[1] * SH.GR, d[2] * SH.GR]); }); }
+    return [];
   }
-  function grabStart(kind, ndc, t, i) {
-    if (!LAST) return;
-    GRAB = { kind, sec: LAST.cur, last: ndc, t, vx: 0, vy: 0, i };
-    if (kind === 'node') {
-      const w = nodeWorld(i, LAST.form);
-      GRAB.depth = dot3(sub(w, LAST.eye), LAST.fw);
-      const d = ray(ndc), k = GRAB.depth / dot3(d, LAST.fw);
-      const hit = [LAST.eye[0] + d[0] * k, LAST.eye[1] + d[1] * k, LAST.eye[2] + d[2] * k];
-      GRAB.grabOff = sub(w, hit); // keep the point you grabbed under the finger
+  const cloudM = () => M4.mul(M4.ry(CL.rot.y), M4.rx(CL.rot.x));
+  function hitTest(k, eye) {
+    const R = PORT ? 120 : 72;
+    if (k === 0) {
+      const q = project(TR.active ? nibWorld() : traceTarget());
+      return Math.hypot(q[0] - MXV, q[1] - MYV) < R * 1.3 ? { kind: 'trace' } : null;
     }
-  }
-  function grabMove(ndc, t) {
-    if (!GRAB || !LAST) return;
-    const dx = ndc[0] - GRAB.last[0], dy = ndc[1] - GRAB.last[1], dt = Math.max(1e-3, t - GRAB.t);
-    GRAB.last = ndc; GRAB.t = t;
-    if (GRAB.kind === 'spin') {
-      const r = ROT[GRAB.sec];
-      r.y += dx * 2.6; r.x = clamp(r.x - dy * 1.8, -0.9, 0.9);
-      GRAB.vy = lerp(GRAB.vy, (dx * 2.6) / dt, 0.4); GRAB.vx = lerp(GRAB.vx, (-dy * 1.8) / dt, 0.4);
-    } else {
-      const d = ray(ndc), k = GRAB.depth / dot3(d, LAST.fw);
-      const w = add3([LAST.eye[0] + d[0] * k, LAST.eye[1] + d[1] * k, LAST.eye[2] + d[2] * k], GRAB.grabOff);
-      // back into the formation's own space (its transform is a rotation about a pivot)
-      const m = LAST.form, rel = [w[0] - m[12], w[1] - m[13], w[2] - m[14]];
-      const local = [m[0] * rel[0] + m[1] * rel[1] + m[2] * rel[2], m[4] * rel[0] + m[5] * rel[1] + m[6] * rel[2], m[8] * rel[0] + m[9] * rel[1] + m[10] * rel[2]];
-      const off = sub(local, SH.NODES[GRAB.i].p), len = Math.hypot(...off);
-      NOFF[GRAB.i].t = len > 5 ? off.map((v) => (v * 5) / len) : off;
-    }
-  }
-  // Returns how hard it was flung (0–1), for sound.
-  function grabEnd() {
-    if (!GRAB) return 0;
-    let fling = 0;
-    if (GRAB.kind === 'spin') {
-      const r = ROT[GRAB.sec];
-      r.vy = clamp(GRAB.vy, -9, 9); r.vx = clamp(GRAB.vx, -5, 5);
-      fling = clamp(Math.abs(r.vy) / 6);
-    }
-    GRAB = null;
-    return fling;
+    const pts = targets(k).map((p) => {
+      if (k === 4 && dot3(norm(p), norm(sub(eye, p))) < 0.15) return null;
+      const q = project(p); return q[2] > 0 ? q : null;
+    });
+    const i = near(pts, MXV, MYV, k === 1 ? R * 0.9 : R);
+    return i < 0 ? null : { kind: ['', 'letter', 'node', 'tool', 'region'][k], i };
   }
 
-  function nodeCard(i, a, at) {
-    const n = SH.NODES[i], [x, y] = project(at(i));
+  /* ---------- pointer (the page forwards events here) ---------- */
+  function pointerDown(ndc, t) {
+    NOW = t; [MXV, MYV] = [(ndc[0] * 0.5 + 0.5) * W, (0.5 - ndc[1] * 0.5) * H];
+    // touch has no hover: test what's under the finger right now
+    if (VP && LASTEYE && SEC >= 0) HOVER = hitTest(SEC, LASTEYE);
+    PD = { x: MXV, y: MYV, d: 0, hit: HOVER, mode: 'click', last: ndc, t };
+    if (SEC === 0 && HOVER && HOVER.kind === 'trace') {
+      if (!TR.on || TR.s >= 2) { Object.assign(TR, { on: true, s: 0, k: 0, unwrite: t, done: -9 }); log('✎ trace it — two strokes, in order', C.lime); }
+      TR.active = true; PD.mode = 'trace'; TR.last = t; sfx('grab');
+    } else if (SEC === 4 && !(HOVER && HOVER.kind === 'region')) PD.mode = 'spin';
+    return flush();
+  }
+  function pointerMove(ndc, t) {
+    NOW = t;
+    const px = (ndc[0] * 0.5 + 0.5) * W, py = (0.5 - ndc[1] * 0.5) * H;
+    if (PD) {
+      PD.d += Math.hypot(px - MXV, py - MYV);
+      if (PD.mode === 'spin') {
+        const dx = ndc[0] - PD.last[0], dy = ndc[1] - PD.last[1], dt = Math.max(1e-3, t - PD.t), r = CL.rot;
+        r.y += dx * 2.6; r.x = clamp(r.x - dy * 1.8, -0.9, 0.9);
+        r.vy = lerp(r.vy, (dx * 2.6) / dt, 0.4); r.vx = lerp(r.vx, (-dy * 1.8) / dt, 0.4);
+      }
+      if (PD.mode === 'trace' && TR.active) traceMove(px, py, t);
+      PD.last = ndc; PD.t = t;
+    }
+    MXV = px; MYV = py;
+    return flush();
+  }
+  function traceMove(px, py, t) {
+    const pts = tracePts()[TR.s], tol = PORT ? 95 : 58;
+    let best = -1, bd = tol;
+    for (let i = TR.k; i < Math.min(pts.length, TR.k + 45); i++) {
+      const q = project(pts[i]); const d = Math.hypot(q[0] - px, q[1] - py);
+      if (d < bd) { bd = d; best = i; }
+    }
+    if (best > TR.k) {
+      const level = clamp((best - TR.k) / Math.max(0.016, t - TR.last) / 120);
+      TR.k = best; TR.last = t; sfx('pen', level);
+    }
+    if (TR.k >= pts.length - 2) {
+      TR.s++; TR.k = 0; TR.active = false;
+      if (TR.s >= 2) { TR.done = t; log('✓ signed — in the order I write it', C.lime); sfx('signed'); }
+      else { log('✓ stroke one — now the second, from the bottom-left', C.ink); sfx('stroke'); }
+    }
+  }
+  function pointerUp(t) {
+    NOW = t;
+    const p = PD; PD = null;
+    if (!p) return flush();
+    if (p.mode === 'trace') { TR.active = false; return flush(); }
+    if (p.mode === 'spin') { const r = CL.rot; r.vy = clamp(r.vy, -9, 9); r.vx = clamp(r.vx, -5, 5); if (Math.abs(r.vy) > 1) sfx('fling', clamp(Math.abs(r.vy) / 6)); return flush(); }
+    if (p.d > 14) return flush();
+    const h = p.hit;
+    if (SEC === 1 && h) {
+      if (h.i === BG.id) {
+        const ttf = t - BG.at; BG.ttf.push(ttf); BG.fixed++; BG.okId = h.i; BG.okAt = t; BG.id = -1; BG.next = t + rnd(0.8, 1.6);
+        log(`✓ fixed in ${ttf.toFixed(1)} s — all tests green`, C.lime); sfx('fixed');
+      } else { BG.badId = h.i; BG.badAt = t; sfx('wrong'); }
+    }
+    if (SEC === 2 && h) {
+      const k = LD.hot.findIndex((x) => x.id === h.i);
+      if (k >= 0) {
+        LD.hot.splice(k, 1); LD.scale[h.i]++; LD.okId = h.i; LD.okAt = t;
+        if (!LD.hot.length) LD.next = t + rnd(2.2, 3.6);
+        log(`✓ ${SH.NODES[h.i].lab} scaled ×${LD.scale[h.i]} — p99 back to ${Math.round(rnd(36, 48))} ms`, C.lime); sfx('scale');
+      } else LD.sel = LD.sel === h.i ? -1 : h.i;
+    }
+    if (SEC === 3 && h && FB.state[h.i] === 1) {
+      const idle = t - FB.idleAt[h.i];
+      FB.state[h.i] = 2; FB.done++; FB.idleSum += idle; FB.carriers.push({ tool: h.i, t0: t });
+      log(`→ LOT A0${FB.lot++} dispatched to EQ-${pad(h.i + 1)} · was idle ${idle.toFixed(1)} s`, C.lime); sfx('dispatch');
+    }
+    if (SEC === 4 && h) { CL.fail = h.i; CL.failAt = t; sfx('fail'); }
+    return flush();
+  }
+  function flush() { const s = SOUND; SOUND = []; return s; }
+
+  function drawLog(score) {
+    const x = PORT ? M : W - M - 500, y0 = PORT ? TOP + 30 : H - 200, lh = PORT ? 40 : 28;
+    if (score) { mono(PORT ? 20 : 13, 700); ctx.fillStyle = C.dim; ctx.textAlign = 'left'; ctx.fillText(score, x, y0 - lh); }
+    mono(PORT ? 24 : 15, 600); ctx.textAlign = 'left';
+    LOG.forEach((l, k) => {
+      const age = NOW - l.t;
+      ctx.globalAlpha = 1 - P(age, 7, 8);
+      ctx.fillStyle = l.col; ctx.fillText(l.text.slice(0, Math.ceil(P(age, 0, 0.3) * l.text.length)), x, y0 + k * lh);
+    });
+    ctx.globalAlpha = 1;
+  }
+  function badge(p, text, col) {
+    const [x, y, w] = project(p);
+    if (w <= 0) return;
+    mono(PORT ? 22 : 13, 700); const tw = ctx.measureText(text).width;
+    ctx.fillStyle = 'rgba(7,7,10,.78)'; ctx.fillRect(x + 16, y - 30, tw + 16, PORT ? 32 : 22);
+    ctx.fillStyle = col; ctx.textAlign = 'left'; ctx.fillText(text, x + 24, y - (PORT ? 8 : 14));
+  }
+
+  function nodeCard(i, a) {
+    const n = SH.NODES[i], [x, y] = project(n.p);
     ctx.globalAlpha = a;
-    ctx.lineCap = 'round';
-    SH.EDGES.forEach(([u, v]) => {
-      if (u !== i && v !== i) return;
-      const [x1, y1] = project(at(u)), [x2, y2] = project(at(v));
-      ctx.strokeStyle = 'rgba(212,255,58,.18)'; ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-      ctx.strokeStyle = C.lime; ctx.lineWidth = 2; ctx.stroke();
-    });
-    ctx.strokeStyle = C.lime; ctx.lineWidth = 2; dot(x, y, 26 + Math.sin(performance.now() / 180) * 3); ctx.stroke();
     const left = x > W - 560, tx = left ? x - 50 : x + 50;
     ctx.textAlign = left ? 'right' : 'left';
     serif(PORT ? 34 : 26); const dw = ctx.measureText(NODE_INFO[n.lab] || '').width;
@@ -705,7 +835,162 @@
     mono(PORT ? 22 : 14, 700); ctx.fillStyle = C.lime; ctx.fillText(`L${n.li} · ${SH.LAYERS[n.li].n}`, tx, y - 34);
     font(PORT ? 52 : 38); ctx.fillStyle = C.ink; ctx.fillText(n.lab, tx, y + 4);
     serif(PORT ? 34 : 26); ctx.fillStyle = 'rgba(243,240,232,.8)'; ctx.fillText(NODE_INFO[n.lab] || '', tx, y + (PORT ? 48 : 36));
-    ctx.globalAlpha = 1; ctx.lineCap = 'butt';
+    ctx.globalAlpha = 1;
+  }
+
+  /* st: { cur, prev, since, clock, now, dt, mouse (NDC), look, ui, flash, gate, still, cursor, dir }
+   * Returns { sounds: [[kind, amount]] }. */
+  function renderHome(st) {
+    layout();
+    NOW = st.now || NOW;
+    const c = st.clock, dt = Math.min(0.05, st.dt || 0.016);
+    if (!st.gate && st.cur !== SEC) { SEC = st.cur; ENTER = NOW; enterSection(SEC); }
+    if (!st.gate) step(SEC, dt);
+    [MXV, MYV] = [(st.mouse[0] * 0.5 + 0.5) * W, (0.5 - st.mouse[1] * 0.5) * H];
+
+    const A = st.gate ? GATE : HOME[st.prev], B = st.gate ? GATE : HOME[st.cur];
+    const e = E.inOutCubic(P(st.since, 0, 1.4)), arc = Math.sin(Math.PI * e);
+    const swoop = st.still ? 0 : arc, lk = st.look || [0, 0];
+    const yaw = lerp(A.yaw, B.yaw, e) + (st.still ? 0 : (c - 3) * 0.015 + lk[0] * 0.08) + swoop * 0.7 * (st.dir || 1);
+    const pitch = clamp(lerp(A.pitch, B.pitch, e) + lk[1] * 0.04 + swoop * 0.12, -0.35, 1.25);
+    const tgt = L3(A.target, B.target, e);
+    const shift = st.gate ? [0, 0] : PORT ? [0, 0.22 + 0.14 * st.ui] : [0.3 * st.ui, 0.02 * st.ui];
+    const f = base(c);
+    const pz = PORT && !st.gate ? lerp(A.mark ? 0.72 : 1, B.mark ? 0.72 : 1, e) : 1;
+    camera(f, orbit(yaw, pitch, lerp(A.dist, B.dist, e) * pz * (1 + swoop * 0.15), tgt), tgt, lerp(A.fov, B.fov, e), 0, shift);
+    f.aperture = 0.01; // keep what you can click in focus
+
+    // the signature settles from the film's sway to still, so it can be traced
+    const settle = 1 - P(c, 3, 5.5);
+    const signHome = M4.mul(M4.mul(M4.t(0, 1.05, 0), M4.ry(signSway(c) * settle)), M4.s(0.8 * 1.04));
+    const form = (h) => (h.shape === I.SIGN ? signHome : h.shape === I.GLOBE ? cloudM() : h.shape === I.DUST ? M4.ry(c * 0.03) : M4.id());
+    Object.assign(f.particles, { a: A.shape, b: B.shape, ma: form(A), mb: form(B), mix: P(st.since, 0, 1.4), spread: 0.8, turb: 1.4, burst: st.still ? 0 : 0.5, gain: lerp(A.gain, B.gain, e) });
+
+    // section effects on the current formation
+    const hot = new Float32Array(24), ok = new Float32Array(24);
+    if (!st.gate && B.id === 'xyphuz' && TR.on) {
+      const u = NOW - TR.unwrite;
+      if (u < 0.55) Object.assign(f.particles, { a: I.SIGN, ma: signHome, b: I.DUST, mb: M4.ry(c * 0.03), mix: P(u, 0, 0.5), turb: 1.6, gain: lerp(0.16, 0.9, P(u, 0, 0.4)) });
+      else Object.assign(f.particles, { a: I.DUST, ma: M4.ry(c * 0.03), b: I.SIGN, mb: M4.mul(SIGN_STILL, M4.s(1.04)), signMode: 1, signT: traceT(), turb: 0.4, gain: lerp(0.9, 0.22, P(traceT(), 0.3, 3.2)) * (TR.s >= 2 ? lerp(1, 0.73, P(NOW - TR.done, 0, 1)) : 1) });
+      if (TR.s < 2 && u > 0.4) { const nw = nibWorld(); f.sprites = [[nw[0], nw[1], nw[2] + 0.15, 0.5, LIME[0] * 3, LIME[1] * 3, LIME[2] * 3, TR.active ? 1 : 0.6]]; }
+    }
+    if (B.id === 'engineer') {
+      if (BG.id >= 0) hot[BG.id] = 1;
+      if (BG.badId >= 0) hot[BG.badId] = Math.max(hot[BG.badId], 0.6 * (1 - P(NOW - BG.badAt, 0, 0.5)));
+      if (BG.okId >= 0) ok[BG.okId] = 1 - P(NOW - BG.okAt, 0, 1.2);
+    }
+    if (B.id === 'architect') {
+      for (let i = 0; i < 12; i++) hot[i] = LD.heat[i];
+      if (LD.okId >= 0) ok[LD.okId] = 1 - P(NOW - LD.okAt, 0, 1.2);
+    }
+    if (B.id === 'enterprise') {
+      FB.state.forEach((s, i) => { if (s === 1) hot[i] = 0.5 + 0.5 * P(NOW - FB.idleAt[i], 0, 6); });
+      if (FB.okId >= 0) ok[FB.okId] = 1 - P(NOW - FB.okAt, 0, 1);
+      f.particles.scan = -5;
+      // lots in flight: a carrier drops from the overhead track onto the tool
+      f.sprites = FB.carriers.map((cr) => {
+        const tp = SH.TOOLS[cr.tool], u = E.inOutCubic(P(NOW - cr.t0, 0, 0.75));
+        const from = [clamp(tp[0], -6.6, 6.6), 1.95, tp[2] < 0 ? -4.6 : 4.6];
+        return [lerp(from[0], tp[0], u), lerp(from[1], tp[1] + 0.2, u) + Math.sin(Math.PI * u) * 1.2, lerp(from[2], tp[2], u), 0.45, LIME[0] * 3, LIME[1] * 3, LIME[2] * 3, 1];
+      });
+    }
+    if (A.shape === I.FAB) f.particles.scan = -5;
+    const fail = CL.fail >= 0 ? P(NOW - CL.failAt, 0, 0.2) * (1 - P(NOW - CL.failAt, 3.4, 3.9)) : 0;
+    if (B.shape === I.GLOBE || A.shape === I.GLOBE) Object.assign(f.particles, { fail, failId: CL.fail });
+    f.particles.hot = hot; f.particles.ok = ok;
+
+    const markOn = B.mark && !(TR.on && TR.s < 2);
+    const markA = (A.mark ? 1 - P(st.since, 0, 0.5) : 0) + (B.mark ? P(st.since, 0.6, 1.4) : 0);
+    let ma = A.mark && B.mark ? 1 : markA;
+    if (B.id === 'xyphuz' && TR.on) ma = TR.s >= 2 ? E.outCubic(P(NOW - TR.done, 0.4, 1.3)) : 1 - P(NOW - TR.unwrite, 0, 0.3);
+    if (markA > 0.001 && !st.gate && (markOn || ma > 0.001)) {
+      f.mark = signMark(c, Math.min(1, ma));
+      f.mark.rot = M4.m3(M4.ry(signSway(c) * settle));
+    }
+    f.bg.cone = (A.mark ? 1 - e : 0) * 0.7 + (B.mark ? e : 0) * 0.7; f.bg.coneCol = [0.2, 0.24, 0.13];
+    f.bg.stars = 0.4;
+    f.post.flash = Math.max(st.flash || 0, B.id === 'xyphuz' && TR.s >= 2 ? 0.25 * Math.pow(1 - P(NOW - TR.done, 0, 0.5), 2) : 0);
+    f.post.ca = 1 + swoop * 3;
+    submit(f);
+
+    if (st.gate) return { sounds: flush() };
+    const settled = P(st.since, 1.2, 1.8) * st.ui;
+    LASTEYE = settled > 0.5 ? f.eye : null;
+    HOVER = settled > 0.5 ? hitTest(SEC, f.eye) : null;
+    let hint = '';
+
+    if (B.id === 'xyphuz' && settled > 0) {
+      if (!TR.on || TR.s >= 2 || !TR.active) {
+        // where to put the pen next
+        const p = project(TR.on && TR.s < 2 ? nibWorld() : traceTarget());
+        const pulse = 0.5 + 0.5 * Math.sin(NOW * 5);
+        ctx.globalAlpha = settled * (TR.s >= 2 ? P(NOW - TR.done, 2.5, 3.2) : 1);
+        ctx.strokeStyle = C.lime; ctx.lineWidth = 2; dot(p[0], p[1], 14 + pulse * 10); ctx.stroke();
+        ctx.fillStyle = C.lime; dot(p[0], p[1], 5); ctx.fill();
+        mono(PORT ? 22 : 13, 700); ctx.textAlign = 'left';
+        ctx.fillText(!TR.on || TR.s >= 2 ? (TR.s >= 2 ? 'SIGN AGAIN' : 'START HERE') : TR.k ? 'CONTINUE' : 'STROKE TWO', p[0] + 30, p[1] + 5);
+        ctx.globalAlpha = 1;
+      }
+      if (TR.on && TR.s < 2) {
+        // a faint dotted guide along the rest of the stroke
+        const pts = tracePts()[TR.s];
+        ctx.fillStyle = 'rgba(212,255,58,.45)';
+        for (let i = TR.k + 3; i < pts.length; i += 3) { const q = project(pts[i]); dot(q[0], q[1], PORT ? 3 : 2); ctx.fill(); }
+      }
+      if (TR.s >= 2) {
+        const a = P(NOW - TR.done, 0.6, 1.2) * (1 - P(NOW - TR.done, 4.5, 5.2));
+        if (a > 0) {
+          ctx.globalAlpha = a; fit(serif, 46, 'Signed — in the order I write it.', W * 0.5);
+          ctx.fillStyle = C.ink; ctx.textAlign = 'center';
+          const q = project([0, -1.3, 0]); ctx.fillText('Signed — in the order I write it.', q[0], q[1] + 40); ctx.globalAlpha = 1;
+        }
+      }
+      hint = TR.active ? 'follow the line' : HOVER ? 'drag to sign' : TR.on && TR.s < 2 ? 'pick up where you left off' : 'sign it — start at the dot';
+      drawLog('');
+    }
+    if (B.id === 'engineer' && settled > 0) {
+      if (BG.id >= 0) badge(SH.LETTERS[BG.id].p, `BUG · ${(7 - (NOW - BG.at)).toFixed(1)} s`, C.coral);
+      const mttr = BG.ttf.length ? (BG.ttf.reduce((a, b) => a + b, 0) / BG.ttf.length).toFixed(1) + ' s' : '—';
+      drawLog(`FIXED ${BG.fixed} · ESCAPED ${BG.escaped} · MEAN TIME TO FIX ${mttr}`);
+      hint = HOVER ? (HOVER.i === BG.id ? 'click to fix' : 'not this one') : BG.id >= 0 ? 'find the glitching letter' : 'tests green — wait for it';
+    }
+    if (B.id === 'architect' && settled > 0) {
+      const mx = Math.max(...LD.heat);
+      SH.NODES.forEach((n, i) => {
+        const h = LD.heat[i] > 0.3;
+        pin(n.p, LD.scale[i] > 1 ? `${n.lab} ×${LD.scale[i]}` : n.lab, settled * (h ? 1 : 0.55 + 0.4 * hash(i, 9)), h ? C.coral : LD.scale[i] > 1 ? C.lime : C.ink);
+      });
+      LD.hot.forEach((x) => badge(SH.NODES[x.id].p, `SATURATED · ${Math.round(LD.heat[x.id] * 100)}%`, C.coral));
+      if (LD.sel >= 0) nodeCard(LD.sel, settled);
+      drawLog(`${Math.round(LD.rps / 100) / 10}k req/s · p99 ${Math.round(38 + mx * 820)} ms · errors ${(mx * 3.8).toFixed(1)}%`);
+      hint = HOVER ? (LD.hot.some((x) => x.id === HOVER.i) ? 'click to scale out' : 'click for details') : LD.hot.length ? 'click the hot service' : 'traffic rising…';
+    }
+    if (B.id === 'enterprise' && settled > 0) {
+      FB.state.forEach((s, i) => { if (s === 1) badge(SH.TOOLS[i], `EQ-${pad(i + 1)} IDLE ${(NOW - FB.idleAt[i]).toFixed(1)} s`, NOW - FB.idleAt[i] > 3 ? C.coral : C.yellow); });
+      const util = 100 * (1 - FB.state.filter((s) => s === 1).length / 24);
+      drawLog(`UTILIZATION ${util.toFixed(0)}% · DISPATCHED ${FB.done} · AVG IDLE ${FB.done ? (FB.idleSum / FB.done).toFixed(1) : '—'} s`);
+      hint = HOVER ? (FB.state[HOVER.i] === 1 ? 'click to dispatch a lot' : 'running') : 'dispatch the idle tools';
+    }
+    if (B.id === 'cloud' && settled > 0) {
+      const m = cloudM();
+      regionPins(m, f.eye, settled, 0);
+      const pts = targets(4).map((p) => (dot3(norm(p), norm(sub(f.eye, p))) > 0.15 ? project(p) : null));
+      if (fail > 0.5 && pts[CL.fail]) { const q = pts[CL.fail]; mono(PORT ? 22 : 14, 700); ctx.fillStyle = C.coral; ctx.textAlign = 'left'; ctx.fillText('✗ DOWN', q[0] + 26, q[1] + 22); }
+      if (CL.fail >= 0 && NOW - CL.failAt < 6.2) failLog(CL.fail, NOW - CL.failAt);
+      hint = HOVER ? `click to take region-${HOVER.i + 1} down` : PD && PD.mode === 'spin' ? 'let go to fling' : 'spin the planet · click a region';
+    }
+
+    corners(0.6 * st.ui);
+    if (st.cursor && st.ui > 0.5 && hint) {
+      const live = HOVER || (PD && PD.mode !== 'click');
+      const r = PD ? 20 : 14 + (HOVER ? 8 : 0);
+      ctx.strokeStyle = live ? C.lime : 'rgba(243,240,232,.85)'; ctx.lineWidth = 2;
+      dot(MXV, MYV, r); ctx.stroke();
+      ctx.fillStyle = C.lime; dot(MXV, MYV, 3); ctx.fill();
+      mono(13, 700); ctx.fillStyle = live ? C.lime : 'rgba(243,240,232,.8)'; ctx.textAlign = 'left';
+      ctx.fillText(hint.toUpperCase(), MXV + r + 12, MYV + 4);
+    }
+    return { sounds: flush(), hover: !!HOVER };
   }
 
   function failLog(id, age) {
@@ -725,92 +1010,6 @@
     ctx.globalAlpha = 1;
   }
 
-  /* st: { cur, prev, since, clock, dt, mouse (NDC), look, ui, flash, gate, still,
-   *       cursor (fine pointer present), sel (node), failId, failAge, dir }
-   * Returns what is under the cursor: { kind: 'node' | 'region', i } or null. */
-  let lastPick = null;
-  function renderHome(st) {
-    layout();
-    const c = st.clock;
-    if (!st.gate) physics(Math.min(0.05, st.dt || 0.016), st.cur, lastPick && lastPick.kind === 'region');
-    const A = st.gate ? GATE : HOME[st.prev], B = st.gate ? GATE : HOME[st.cur];
-    const rA = st.gate ? null : ROT[st.prev], rB = st.gate ? null : ROT[st.cur];
-    const e = E.inOutCubic(P(st.since, 0, 1.4)), arc = Math.sin(Math.PI * e);
-    const swoop = st.still ? 0 : arc, lk = st.look || [0, 0];
-    const yaw = lerp(A.yaw, B.yaw, e) + (st.still ? 0 : (c - 3) * 0.02 + lk[0] * 0.12) + swoop * 0.7 * (st.dir || 1);
-    const pitch = clamp(lerp(A.pitch, B.pitch, e) + lk[1] * 0.06 + swoop * 0.12, -0.35, 1.25);
-    const tgt = L3(A.target, B.target, e);
-    const shift = st.gate ? [0, 0] : PORT ? [0, 0.22 + 0.14 * st.ui] : [0.3 * st.ui, 0.02 * st.ui];
-    const f = base(c);
-    const pz = PORT && !st.gate ? lerp(A.mark ? 0.72 : 1, B.mark ? 0.72 : 1, e) : 1;
-    camera(f, orbit(yaw, pitch, lerp(A.dist, B.dist, e) * pz * (1 + swoop * 0.15), tgt), tgt, lerp(A.fov, B.fov, e), 0, shift);
-    f.aperture = 0.02;
-    const mA = formM(A, c, lk, rA), mB = formM(B, c, lk, rB);
-    Object.assign(f.particles, {
-      a: A.shape, b: B.shape, ma: mA, mb: mB, mix: P(st.since, 0, 1.4), spread: 0.8, turb: 1.4, burst: st.still ? 0 : 0.5, gain: lerp(A.gain, B.gain, e),
-      nodesA: A.shape === I.ARCH ? nodeFlat() : null, nodesB: B.shape === I.ARCH ? nodeFlat() : null,
-    });
-    const fail = st.failId >= 0 ? P(st.failAge, 0, 0.2) * (1 - P(st.failAge, 3.4, 3.9)) : 0;
-    if (B.shape === I.GLOBE || A.shape === I.GLOBE) Object.assign(f.particles, { fail, failId: st.failId >= 0 ? st.failId : -1 });
-    if (B.shape === I.FAB || A.shape === I.FAB) f.particles.scan = -5;
-
-    const fw = norm(sub(tgt, f.eye)), rt = norm(cross(fw, f.up)), up = cross(rt, fw), th = Math.tan(f.fov / 2);
-    LAST = { eye: f.eye, fw, rt, up, th, shift, form: mB, cur: st.cur };
-
-    const markA = (A.mark ? 1 - P(st.since, 0, 0.5) : 0) + (B.mark ? P(st.since, 0.6, 1.4) : 0);
-    if (markA > 0.001 && !st.gate) f.mark = signMark(c, Math.min(1, A.mark && B.mark ? 1 : markA), lk, B.mark ? rB : rA);
-    f.bg.cone = (A.mark ? 1 - e : 0) * 0.7 + (B.mark ? e : 0) * 0.7; f.bg.coneCol = [0.2, 0.24, 0.13];
-    f.bg.stars = 0.4;
-    f.post.flash = st.flash || 0;
-    const spinning = rB ? Math.min(1, Math.abs(rB.vy) / 6) : 0;
-    f.post.ca = 1 + swoop * 3 + spinning * 2.5;
-    submit(f);
-
-    if (st.gate) return null;
-    const mx = (st.mouse[0] * 0.5 + 0.5) * W, my = (0.5 - st.mouse[1] * 0.5) * H;
-    const settled = P(st.since, 1.2, 1.8) * st.ui;
-    let pick = null, hint = 'drag to spin';
-
-    if (B.id === 'architect' && settled > 0) {
-      const at = (i) => nodeWorld(i, mB);
-      const pts = SH.NODES.map((n, i) => { const q = project(at(i)); return q[2] > 0 ? q : null; });
-      const hv = GRAB && GRAB.kind === 'node' ? GRAB.i : near(pts, mx, my, PORT ? 120 : 70);
-      if (hv >= 0) pick = { kind: 'node', i: hv };
-      const focus = GRAB && GRAB.kind === 'node' ? GRAB.i : st.sel >= 0 ? st.sel : hv;
-      SH.NODES.forEach((n, i) => pin(at(i), n.lab, settled * (focus >= 0 ? 0.35 : 1) * (0.6 + 0.4 * hash(i, 9)), i === 2 ? C.lime : C.ink));
-      if (focus >= 0) nodeCard(focus, settled, at);
-      hint = GRAB && GRAB.kind === 'node' ? 'drop it anywhere' : hv >= 0 ? 'drag to move · click to pin' : 'grab a service · drag to spin';
-    }
-    if (B.id === 'cloud' && settled > 0) {
-      const pts = SH.REGIONS.map((rg) => {
-        const d = SH.dirOf(...rg), p = M4.apply(mB, [d[0] * SH.GR, d[1] * SH.GR, d[2] * SH.GR]);
-        return dot3(norm(p), norm(sub(f.eye, p))) > 0.15 ? project(p) : null;
-      });
-      const hv = GRAB ? -1 : near(pts, mx, my, PORT ? 130 : 80);
-      if (hv >= 0) pick = { kind: 'region', i: hv };
-      regionPins(mB, f.eye, settled, 0);
-      if (fail > 0.5 && pts[st.failId]) {
-        const q = pts[st.failId];
-        mono(PORT ? 22 : 14, 700); ctx.fillStyle = C.coral; ctx.textAlign = 'left'; ctx.fillText('✗ DOWN', q[0] + 26, q[1] + 22);
-      }
-      if (st.failId >= 0 && st.failAge < 6.2) failLog(st.failId, st.failAge);
-      hint = hv >= 0 ? `click to take region-${hv + 1} down` : 'spin the planet · click a region';
-    }
-    if (GRAB && GRAB.kind === 'spin') hint = 'let go to fling';
-    lastPick = pick;
-
-    corners(0.6 * st.ui);
-    if (st.cursor && st.ui > 0.5) {
-      const r = GRAB ? 22 : 14 + (pick ? 8 : 0);
-      ctx.strokeStyle = pick || GRAB ? C.lime : 'rgba(243,240,232,.85)'; ctx.lineWidth = 2;
-      dot(mx, my, r); ctx.stroke();
-      ctx.fillStyle = C.lime; dot(mx, my, 3); ctx.fill();
-      mono(13, 700); ctx.fillStyle = pick || GRAB ? C.lime : 'rgba(243,240,232,.8)'; ctx.textAlign = 'left';
-      ctx.fillText(hint.toUpperCase(), mx + r + 12, my + 4);
-    }
-    return pick;
-  }
-
   async function ready() {
     const fonts = [`700 100px ${FD}`, `500 20px ${FM}`, `400 20px ${FM}`, `700 20px ${FM}`, `italic 400 40px ${FS}`];
     try { await Promise.race([Promise.all(fonts.map((x) => document.fonts.load(x))), new Promise((r) => setTimeout(r, 3500))]); } catch (e) { /* system fonts */ }
@@ -827,7 +1026,11 @@
     create(glCanvas, overlay) {
       glc = glCanvas; ov = overlay; ctx = ov.getContext('2d');
       glOK = EN.init(glc);
-      return { render, renderHome, ready, grabStart, grabMove, grabEnd, get grabbing() { return !!GRAB; }, get debug() { return { ROT, NOFF, GRAB }; } };
+      return { render, renderHome, ready, pointerDown, pointerMove, pointerUp, get debug() {
+        // screen (CSS px) helpers for automated checks
+        const css = (q) => [(q[0] * SCALE * window.innerWidth) / ov.width, (q[1] * SCALE * window.innerWidth) / ov.width];
+        return { TR, BG, LD, FB, CL, HOVER, guide: (k) => tracePts()[k].map((p) => css(project(p))), at: (p) => css(project(p)) };
+      } };
     },
   };
 })();

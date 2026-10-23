@@ -7,7 +7,7 @@
   'use strict';
 
   const DUR = 30;
-  let ac = null, comp, master, verb, noise, bus = null, cursor = 0, muted = false, ambT = null;
+  let ac = null, comp, master, verb, noise, bus = null, cursor = 0, muted = false, ambT = null, penT = 0;
   const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
 
   function init() {
@@ -254,10 +254,31 @@
       if (kind === 'hover') I.blip(w, 2600, 0.018, 0.03);
       else if (kind === 'scatter') { I.whoosh(w, 0.35, 0.1); I.pluck(w, 88, 0.035); }
       else if (kind === 'grab') I.blip(w, 1400, 0.025, 0.04);
+      else if (kind === 'stroke') { I.pluck(w, 81, 0.05); I.pluck(w + 0.08, 88, 0.04); }
+      else if (kind === 'signed') [69, 76, 81, 88].forEach((m, i) => I.pluck(w + i * 0.07, m, 0.05));
+      else if (kind === 'bug') { I.blip(w, 220, 0.05, 0.05); I.blip(w + 0.06, 180, 0.05, 0.05); }
+      else if (kind === 'fixed') [76, 81, 88].forEach((m, i) => I.pluck(w + i * 0.05, m, 0.05));
+      else if (kind === 'wrong') I.blip(w, 160, 0.06, 0.08);
+      else if (kind === 'hot') { I.alarm(w, 392); }
+      else if (kind === 'scale') { I.boing(w, 69, 0.08); I.pluck(w + 0.08, 81, 0.04); I.pluck(w + 0.14, 88, 0.035); }
+      else if (kind === 'idle') I.blip(w, 660, 0.025, 0.05);
+      else if (kind === 'dispatch') { I.whoosh(w, 0.5, 0.08); I.blip(w, 1320, 0.035, 0.05); }
+      else if (kind === 'land') I.pluck(w, 84, 0.035);
       else if (kind === 'drop') { I.boing(w, 72, 0.09); I.pluck(w + 0.06, 84, 0.03); }
       else if (kind === 'fling') I.whoosh(w, 0.25 + 0.5 * (amt || 0.5), 0.06 + 0.1 * (amt || 0.5));
       else if (kind === 'fail') { I.alarm(w, 523); I.alarm(w + 0.18, 440); I.impact(w, 0.25); }
       else { I.pluck(w, 81, 0.05); I.pluck(w + 0.06, 88, 0.035); }
+    },
+    // Pen-on-glass scratch while a visitor signs; louder and brighter when they move fast.
+    pen(level) {
+      if (!ac || muted || !(level > 0)) return;
+      const t = ac.currentTime;
+      if (t - penT < 0.05) return;
+      penT = t;
+      if (!bus) newBus();
+      const n = nz(t, t + 0.1), bp = filt('bandpass', 2200 + level * 2200, 1.3), g = gain();
+      env(g, t, 0.004, 0.015 + 0.06 * level, 0.07);
+      n.connect(bp).connect(g).connect(bus);
     },
     // A slow pad that keeps breathing under the site after the reel ends.
     ambient(on) {
