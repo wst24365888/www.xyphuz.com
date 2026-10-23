@@ -640,6 +640,15 @@
   const FB = { state: new Array(24).fill(0), idleAt: new Array(24).fill(0), next: 0, done: 0, idleSum: 0, okId: -1, okAt: -9, carriers: [], lot: 427 };
   // ---- 04 · cloud ----
   const CL = { rot: { y: 0.6, x: 0, vy: 0, vx: 0 }, fail: -1, failAt: -99 };
+  // drag anywhere to orbit the camera; it drifts back to the chapter's framing once you let go
+  const OB = { yaw: 0, pitch: 0, vy: 0, vp: 0, at: -99 };
+  function stepOrbit(dt) {
+    if (PD && PD.mode === 'orbit') return;
+    OB.yaw += OB.vy * dt; OB.pitch += OB.vp * dt;
+    const damp = Math.exp(-dt * 3.5); OB.vy *= damp; OB.vp *= damp;
+    const back = NOW - OB.at > 2.5 ? 1 - Math.exp(-dt * 1.6) : 0;
+    OB.yaw = clamp(OB.yaw * (1 - back), -1.1, 1.1); OB.pitch = clamp(OB.pitch * (1 - back), -0.6, 0.6);
+  }
 
   function enterSection(k) {
     LOG.length = 0;
@@ -749,6 +758,12 @@
         r.y += dx * 2.6; r.x = clamp(r.x - dy * 1.8, -0.9, 0.9);
         r.vy = lerp(r.vy, (dx * 2.6) / dt, 0.4); r.vx = lerp(r.vx, (-dy * 1.8) / dt, 0.4);
       }
+      if (PD.mode === 'click' && PD.d > 14) { PD.mode = 'orbit'; HOVER = null; }
+      if (PD.mode === 'orbit') {
+        const dx = ndc[0] - PD.last[0], dy = ndc[1] - PD.last[1], dt = Math.max(1e-3, t - PD.t);
+        OB.yaw = clamp(OB.yaw - dx * 1.6, -1.1, 1.1); OB.pitch = clamp(OB.pitch - dy * 0.9, -0.6, 0.6);
+        OB.vy = lerp(OB.vy, (-dx * 1.6) / dt, 0.4); OB.vp = lerp(OB.vp, (-dy * 0.9) / dt, 0.4); OB.at = t;
+      }
       if (PD.mode === 'trace' && TR.active) traceMove(px, py, t);
       PD.last = ndc; PD.t = t;
     }
@@ -777,6 +792,7 @@
     const p = PD; PD = null;
     if (!p) return flush();
     if (p.mode === 'trace') { TR.active = false; return flush(); }
+    if (p.mode === 'orbit') { OB.vy = clamp(OB.vy, -4, 4); OB.vp = clamp(OB.vp, -2, 2); OB.at = t; return flush(); }
     if (p.mode === 'spin') { const r = CL.rot; r.vy = clamp(r.vy, -9, 9); r.vx = clamp(r.vx, -5, 5); if (Math.abs(r.vy) > 1) sfx('fling', clamp(Math.abs(r.vy) / 6)); return flush(); }
     if (p.d > 14) return flush();
     const h = p.hit;
@@ -845,14 +861,15 @@
     NOW = st.now || NOW;
     const c = st.clock, dt = Math.min(0.05, st.dt || 0.016);
     if (!st.gate && st.cur !== SEC) { SEC = st.cur; ENTER = NOW; enterSection(SEC); }
-    if (!st.gate) step(SEC, dt);
+    if (!st.gate) { step(SEC, dt); stepOrbit(dt); }
     [MXV, MYV] = [(st.mouse[0] * 0.5 + 0.5) * W, (0.5 - st.mouse[1] * 0.5) * H];
 
     const A = st.gate ? GATE : HOME[st.prev], B = st.gate ? GATE : HOME[st.cur];
     const e = E.inOutCubic(P(st.since, 0, 1.4)), arc = Math.sin(Math.PI * e);
     const swoop = st.still ? 0 : arc, lk = st.look || [0, 0];
-    const yaw = lerp(A.yaw, B.yaw, e) + (st.still ? 0 : (c - 3) * 0.015 + lk[0] * 0.08) + swoop * 0.7 * (st.dir || 1);
-    const pitch = clamp(lerp(A.pitch, B.pitch, e) + lk[1] * 0.04 + swoop * 0.12, -0.35, 1.25);
+    const ob = st.gate ? [0, 0] : [OB.yaw, OB.pitch];
+    const yaw = lerp(A.yaw, B.yaw, e) + (st.still ? 0 : lk[0] * 0.08) + swoop * 0.7 * (st.dir || 1) + ob[0];
+    const pitch = clamp(lerp(A.pitch, B.pitch, e) + lk[1] * 0.04 + swoop * 0.12 + ob[1], -0.35, 1.25);
     const tgt = L3(A.target, B.target, e);
     const shift = st.gate ? [0, 0] : PORT ? [0, 0.22 + 0.14 * st.ui] : [0.3 * st.ui, 0.02 * st.ui];
     const f = base(c);
@@ -916,7 +933,7 @@
     if (st.gate) return { sounds: flush() };
     const settled = P(st.since, 1.2, 1.8) * st.ui;
     LASTEYE = settled > 0.5 ? f.eye : null;
-    HOVER = settled > 0.5 ? hitTest(SEC, f.eye) : null;
+    HOVER = settled > 0.5 && !(PD && PD.mode === 'orbit') ? hitTest(SEC, f.eye) : null;
     let hint = '';
 
     if (B.id === 'xyphuz' && settled > 0) {
@@ -980,6 +997,7 @@
       hint = HOVER ? `click to take region-${HOVER.i + 1} down` : PD && PD.mode === 'spin' ? 'let go to fling' : 'spin the planet · click a region';
     }
 
+    if (PD && PD.mode === 'orbit') hint = 'orbiting';
     corners(0.6 * st.ui);
     const drawn = !!(st.cursor && st.ui > 0.5 && hint);
     if (drawn) {
@@ -1030,7 +1048,7 @@
       return { render, renderHome, ready, pointerDown, pointerMove, pointerUp, get debug() {
         // screen (CSS px) helpers for automated checks
         const css = (q) => [(q[0] * SCALE * window.innerWidth) / ov.width, (q[1] * SCALE * window.innerWidth) / ov.width];
-        return { TR, BG, LD, FB, CL, HOVER, guide: (k) => tracePts()[k].map((p) => css(project(p))), at: (p) => css(project(p)) };
+        return { TR, BG, LD, FB, CL, OB, HOVER, eye: LASTEYE, guide: (k) => tracePts()[k].map((p) => css(project(p))), at: (p) => css(project(p)) };
       } };
     },
   };
