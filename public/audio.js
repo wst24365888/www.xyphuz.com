@@ -7,7 +7,7 @@
   'use strict';
 
   const DUR = 30;
-  let ac = null, comp, master, verb, noise, bus = null, cursor = 0, muted = false, ambT = null;
+  let ac = null, comp, master, verb, noise, bus = null, cursor = 0, muted = false, ambT = null, penT = 0;
   const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
 
   function init() {
@@ -253,8 +253,20 @@
       const w = ac.currentTime + 0.01;
       if (kind === 'hover') I.blip(w, 2600, 0.018, 0.03);
       else if (kind === 'scatter') { I.whoosh(w, 0.35, 0.1); I.pluck(w, 88, 0.035); }
+      else if (kind === 'ink') { I.whoosh(w, 0.3, 0.08); I.boing(w + 0.05, 76, 0.09); I.pluck(w + 0.12, 83, 0.035); I.pluck(w + 0.2, 88, 0.03); }
       else if (kind === 'fail') { I.alarm(w, 523); I.alarm(w + 0.18, 440); I.impact(w, 0.25); }
       else { I.pluck(w, 81, 0.05); I.pluck(w + 0.06, 88, 0.035); }
+    },
+    // Pen-on-glass scratch while a visitor draws; louder and brighter when they move fast.
+    pen(level) {
+      if (!ac || muted || level <= 0) return;
+      const t = ac.currentTime;
+      if (t - penT < 0.05) return;
+      penT = t;
+      if (!bus) newBus();
+      const n = nz(t, t + 0.1), bp = filt('bandpass', 2200 + level * 2200, 1.3), g = gain();
+      env(g, t, 0.004, 0.015 + 0.06 * level, 0.07);
+      n.connect(bp).connect(g).connect(bus);
     },
     // A slow pad that keeps breathing under the site after the reel ends.
     ambient(on) {

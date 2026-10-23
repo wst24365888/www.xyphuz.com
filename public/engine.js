@@ -166,11 +166,12 @@ void main() { vec2 d = gl_PointCoord * 2.0 - 1.0; float r2 = dot(d, d); if (r2 >
 
   const MESH_VS = `#version 300 es
 in vec3 aPos; in vec3 aN;
-uniform mat4 uVP; uniform mat3 uRot; uniform vec3 uMPos, uMScale;
+uniform mat4 uVP; uniform mat3 uRot; uniform vec3 uMPos, uMScale; uniform float uFace;
 out vec3 vN; out vec3 vW; out float vFace;
 void main() {
   vec3 w = uMPos + uRot * (aPos * uMScale);
-  vW = w; vN = normalize(uRot * (aN / uMScale)); vFace = smoothstep(0.75, 0.98, abs(aN.z));
+  vW = w; vN = normalize(uRot * (aN / uMScale));
+  vFace = uFace >= 0.0 ? uFace : smoothstep(0.75, 0.98, abs(aN.z)); // tubes use a fixed enamel/chrome blend
   gl_Position = uVP * vec4(w, 1.0);
 }`;
   const MESH_FS = `#version 300 es
@@ -374,6 +375,43 @@ void main() {
     meshCount = m.idx.length; meshThick = m.thick;
   }
   let meshThick = 0.13;
+
+  // Visitor-drawn strokes: one VAO per stroke, re-uploaded only when its geometry changes.
+  const strokeVAO = new Map();
+  function drawStrokes(f) {
+    const seen = new Set();
+    use(PR.mesh);
+    m4('uVP', f.vp); f3('uCam', f.eye); f3('uColor', [0.83, 1, 0.23]); f1('uSweep', 0.4 + Math.sin(f.time * 0.4) * 0.8);
+    gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(true);
+    for (const s of f.strokes) {
+      seen.add(s.id);
+      let o = strokeVAO.get(s.id);
+      if (!o) {
+        o = { vao: gl.createVertexArray(), pb: gl.createBuffer(), nb: gl.createBuffer(), ib: gl.createBuffer(), ver: -1, count: 0 };
+        gl.bindVertexArray(o.vao);
+        gl.bindBuffer(gl.ARRAY_BUFFER, o.pb); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+        gl.bindBuffer(gl.ARRAY_BUFFER, o.nb); gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, 0);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, o.ib);
+        strokeVAO.set(s.id, o);
+      }
+      gl.bindVertexArray(o.vao);
+      if (o.ver !== s.ver) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, o.pb); gl.bufferData(gl.ARRAY_BUFFER, s.pos, gl.DYNAMIC_DRAW);
+        gl.bindBuffer(gl.ARRAY_BUFFER, o.nb); gl.bufferData(gl.ARRAY_BUFFER, s.nrm, gl.DYNAMIC_DRAW);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, s.idx, gl.DYNAMIC_DRAW);
+        o.ver = s.ver; o.count = s.idx.length;
+      }
+      m3('uRot', s.rot); f3('uMPos', s.mpos); f3('uMScale', [s.scale, s.scale, s.scale]);
+      f1('uEmit', s.emit); f1('uAlpha', s.alpha); f1('uFace', s.face);
+      gl.drawElements(gl.TRIANGLES, o.count, gl.UNSIGNED_INT, 0);
+    }
+    for (const [id, o] of strokeVAO) {
+      if (seen.has(id)) continue;
+      gl.deleteVertexArray(o.vao); gl.deleteBuffer(o.pb); gl.deleteBuffer(o.nb); gl.deleteBuffer(o.ib);
+      strokeVAO.delete(id);
+    }
+    gl.bindVertexArray(null);
+  }
   const bindTex = (unit, t) => { gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t); };
 
   function fullscreen() { gl.bindVertexArray(vaoQuad); gl.drawArrays(gl.TRIANGLES, 0, 3); }
@@ -400,12 +438,14 @@ void main() {
       use(PR.mesh);
       m4('uVP', f.vp); m3('uRot', mk.rot); f3('uMPos', mk.pos); f3('uMScale', [mk.scale, mk.scale, mk.scale * kz]);
       f3('uCam', f.eye); f3('uColor', mk.color || [0.83, 1, 0.23]);
-      f1('uEmit', mk.emit || 0); f1('uSweep', mk.sweep || 0); f1('uAlpha', mk.alpha);
+      f1('uEmit', mk.emit || 0); f1('uSweep', mk.sweep || 0); f1('uAlpha', mk.alpha); f1('uFace', -1);
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
       gl.depthMask(true);
       gl.bindVertexArray(vaoMesh);
       gl.drawElements(gl.TRIANGLES, meshCount, gl.UNSIGNED_INT, 0);
     }
+
+    if (f.strokes) drawStrokes(f);
 
     const p = f.particles;
     if (p && shapeTex.length) {

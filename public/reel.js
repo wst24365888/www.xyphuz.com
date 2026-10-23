@@ -311,19 +311,14 @@
     SH.NODES.forEach((n, i) => pin(n.p, n.lab, a * (0.6 + 0.4 * hash(i, 9)), i === 2 ? C.lime : C.ink));
     SH.LAYERS.forEach((l, li) => pin([-4.6, l.y * 2, 3.6], `L${li}  ${l.n}`, a * 0.8, C.blue, -10, 12));
   }
+  // The architecture's last beat glides to a front-on view — exactly the
+  // camera the wafer chapter opens on, so the cut between them is invisible.
+  const WAFER_EYE = [0, 0.6, 12];
   function sArch(lt, t, f) {
-    const yaw = -0.9 + lt * 0.22, pitch = 0.5;
-    let eye = orbit(yaw, pitch, 13.5), tgt = [0, -0.3, 0];
-    const A = SH.NODES[4].p, B = SH.NODES[10].p, mid = L3(A, B, 0.5);
-    const dv = E.inOutCubic(P(lt, 2.8, 3.8)), rush = E.inCubic(P(lt, 3.0, 3.98));
-    tgt = L3(tgt, mid, dv);
-    const away = norm(sub(eye, mid));
-    // the dive ignores FRAME: we want to end up inside the packet on every screen
-    eye = L3(eye, [mid[0] + away[0] * 0.4 / FRAME, mid[1] + away[1] * 0.4 / FRAME, mid[2] + away[2] * 0.4 / FRAME], rush);
-    camera(f, eye, tgt, 38);
-    f.aperture = lerp(0.03, 0.09, rush);
+    const yaw = -0.9 + lt * 0.22, pitch = 0.5, g = E.inOutCubic(P(lt, 2.6, 4.0));
+    camera(f, L3(orbit(yaw, pitch, 13.5), WAFER_EYE, g), L3([0, -0.3, 0], [0, 0, 0], g), 38);
+    f.aperture = 0.03;
     Object.assign(f.particles, { a: I.TEXT, b: I.ARCH, mix: E.inOutCubic(P(lt, 0, 1.5)), spread: 0.9, turb: 0.9, size: 0.015 });
-    f.post.ca = 1 + rush * 4;
 
     archPins(P(lt, 1.2, 1.6) * (1 - P(lt, 2.9, 3.2)));
     const ta = P(lt, 0.9, 1.2) * (1 - P(lt, 3.0, 3.3));
@@ -355,8 +350,8 @@
   }
   function sFab(lt, t, f) {
     if (lt < 2.0) {
-      const d = lerp(2.4, 11, E.inOutCubic(P(lt, 0, 1.3)));
-      camera(f, [0, lerp(0, 3, E.inOutCubic(P(lt, 1.2, 2.0))), d], [0, 0, 0], 38);
+      const tilt = E.inOutCubic(P(lt, 1.2, 2.0));
+      camera(f, [0, WAFER_EYE[1] * (1 - E.inOutCubic(P(lt, 0, 0.8))) + 3 * tilt, lerp(WAFER_EYE[2], 10.5, E.inOutCubic(P(lt, 0, 1.3)))], [0, 0, 0], 38);
       Object.assign(f.particles, { a: I.ARCH, b: I.WAFER, mix: E.inOutCubic(P(lt, 0, 1.0)), spread: 0.5, turb: 1.0, mb: M4.rx(WAFER_TILT * E.inOutCubic(P(lt, 1.2, 2.0))), scan: lerp(5, -5, P(lt, 0.7, 1.8)) });
     } else {
       const e2 = E.inOutCubic(P(lt, 2.0, 3.0)), rise = E.inOutCubic(P(lt, 3.3, 4.0));
@@ -374,7 +369,6 @@
       ctx.fillText(s, W / 2, H - (PORT ? 200 : 90));
       ctx.globalAlpha = 1;
     }
-    if (lt < 0.8) { ctx.globalAlpha = P(lt, 0.1, 0.3) * (1 - P(lt, 0.6, 0.8)); label('[ 04 ]  ONE DIE', W / 2, TOP, 'center'); ctx.globalAlpha = 1; }
     ctx.globalAlpha = 1 - P(lt, 3.4, 3.7);
     if (lt > 2.4) titleBlock(lt, 2.4, '[ 04 ]  GIGA-FAB SCALE', 'ENTERPRISE', 'SYSTEMS', C.lime, 'for giga-fab semiconductor manufacturing.', 'MES · DISPATCH · SCHEDULING · SPC · AMHS · 24/7');
     ctx.globalAlpha = 1;
@@ -646,8 +640,124 @@
     ctx.globalAlpha = 1;
   }
 
-  /* st: { cur, prev, since, clock, yaw, pitch, mouse (NDC), force, well, look, ui, flash, gate, still,
-   *       cursor (fine pointer present), holding, sel (node), failId, failAge, dir }
+  /* ================================================================
+   * INK — whatever visitors draw becomes a 3D object
+   * Strokes live in camera space (x right, y up, z into the screen), so
+   * a drawing stays where it was drawn while the worlds change behind it.
+   * ================================================================ */
+  const INK_Z = 5.5, INK_MAX = 14;
+  const INK = { list: [], cur: null, id: 0 };
+  let CAM = null; // the last home camera, for turning the pointer into a point
+
+  function inkPoint(ndc) {
+    if (!CAM) return null;
+    const ox = (ndc[0] - CAM.shift[0]) * CAM.th * (W / H), oy = (ndc[1] - CAM.shift[1]) * CAM.th;
+    return [ox * INK_Z, oy * INK_Z, INK_Z];
+  }
+  function beginStroke(ndc, t) {
+    const p = inkPoint(ndc);
+    if (!p) return;
+    INK.cur = { id: ++INK.id, pts: [[p[0], p[1], p[2], 0.9]], last: t, seed: Math.random() * 10, ver: 0, done: null, dying: null };
+    INK.list.push(INK.cur);
+    const alive = INK.list.filter((s) => s.dying == null);
+    if (alive.length > INK_MAX) alive[0].dying = t;
+  }
+  // Returns the pen speed (0–1), for the scratch sound.
+  function addPoint(ndc, t) {
+    const s = INK.cur, p = inkPoint(ndc);
+    if (!s || !p) return 0;
+    const q = s.pts[s.pts.length - 1], d = Math.hypot(p[0] - q[0], p[1] - q[1]);
+    if (d < 0.012) return 0;
+    const v = d / Math.max(1e-3, t - s.last);
+    s.last = t;
+    // fast strokes run thin, slow ones pool — like a real nib
+    s.pts.push([p[0], p[1], p[2], lerp(q[3], clamp(1.3 - v / 9, 0.45, 1.3), 0.35)]);
+    if (s.pts.length > 900) s.pts.splice(1, 1);
+    s.ver++;
+    return clamp(v / 8);
+  }
+  function endStroke(t) {
+    const s = INK.cur;
+    INK.cur = null;
+    if (!s) return false;
+    if (s.pts.length < 3) { INK.list.splice(INK.list.indexOf(s), 1); return false; }
+    s.done = t;
+    return true;
+  }
+  function clearInk(t) { INK.list.forEach((s) => { if (s.dying == null) s.dying = t; }); }
+
+  // Smooth the path, then sweep a tapered tube along it.
+  function tubeGeo(s, rMul) {
+    let Pp = s.pts;
+    for (let it = 0; it < 2; it++) {
+      const Q = [Pp[0]];
+      for (let i = 0; i < Pp.length - 1; i++) {
+        const a = Pp[i], b = Pp[i + 1];
+        Q.push(a.map((v, k) => v * 0.75 + b[k] * 0.25), a.map((v, k) => v * 0.25 + b[k] * 0.75));
+      }
+      Q.push(Pp[Pp.length - 1]);
+      Pp = Q;
+    }
+    if (Pp.length > 1400) Pp = Pp.filter((_, i) => i % Math.ceil(Pp.length / 1400) === 0 || i === Pp.length - 1);
+    const n = Pp.length, K = 12, c = [0, 0, 0];
+    Pp.forEach((p) => { c[0] += p[0] / n; c[1] += p[1] / n; c[2] += p[2] / n; });
+    const Lc = [0];
+    for (let i = 1; i < n; i++) Lc.push(Lc[i - 1] + Math.hypot(Pp[i][0] - Pp[i - 1][0], Pp[i][1] - Pp[i - 1][1]));
+    const total = Lc[n - 1] || 1, r0 = 0.055 * rMul;
+    const pos = new Float32Array(n * K * 3), nrm = new Float32Array(n * K * 3), idx = new Uint32Array((n - 1) * K * 6);
+    for (let i = 0; i < n; i++) {
+      const a = Pp[Math.max(0, i - 1)], b = Pp[Math.min(n - 1, i + 1)];
+      const T = norm([b[0] - a[0], b[1] - a[1], b[2] - a[2]]);
+      let B = cross(T, [0, 0, 1]);
+      B = Math.hypot(...B) < 1e-6 ? [1, 0, 0] : norm(B);
+      const Nn = cross(B, T);
+      const u = Lc[i] / total, taper = Math.pow(Math.sin(Math.PI * clamp(u)), 0.4) * 0.85 + 0.15;
+      const r = r0 * Pp[i][3] * taper;
+      for (let k = 0; k < K; k++) {
+        const ang = (k / K) * TAU, ca = Math.cos(ang), sa = Math.sin(ang);
+        const d = [B[0] * ca + Nn[0] * sa, B[1] * ca + Nn[1] * sa, B[2] * ca + Nn[2] * sa], o = (i * K + k) * 3;
+        pos[o] = Pp[i][0] - c[0] + d[0] * r; pos[o + 1] = Pp[i][1] - c[1] + d[1] * r; pos[o + 2] = Pp[i][2] - c[2] + d[2] * r;
+        nrm[o] = d[0]; nrm[o + 1] = d[1]; nrm[o + 2] = d[2];
+      }
+    }
+    let q = 0;
+    for (let i = 0; i < n - 1; i++) {
+      for (let k = 0; k < K; k++) {
+        const a = i * K + k, b2 = i * K + ((k + 1) % K);
+        idx[q++] = a; idx[q++] = b2; idx[q++] = b2 + K; idx[q++] = a; idx[q++] = b2 + K; idx[q++] = a + K;
+      }
+    }
+    return { pos, nrm, idx, c };
+  }
+
+  // Per frame: inflate on release, then float; place everything in front of the camera.
+  function inkFrame(t, eye, rt, up, fw) {
+    const basis = new Float32Array([rt[0], rt[1], rt[2], 0, up[0], up[1], up[2], 0, fw[0], fw[1], fw[2], 0, 0, 0, 0, 1]);
+    const out = [];
+    INK.list = INK.list.filter((s) => s.dying == null || t - s.dying < 0.7);
+    for (const s of INK.list) {
+      const age = s.done == null ? 0 : t - s.done;
+      const inflate = s.done == null ? 0 : E.outBack(P(age, 0, 0.55));
+      const rMul = lerp(0.5, 1, inflate);
+      const key = s.ver + ':' + rMul.toFixed(3);
+      if (s.key !== key) { s.geo = tubeGeo(s, rMul); s.key = key; s.gv = (s.gv || 0) + 1; }
+      const live = P(age, 0.4, 1.6);
+      const local = M4.mul(M4.ry(Math.sin(age * 0.6 + s.seed) * 0.35 * live), M4.rx(Math.sin(age * 0.45 + s.seed * 1.7) * 0.18 * live));
+      const cl = s.geo.c, bob = Math.sin(age * 0.9 + s.seed) * 0.05 * live;
+      const cw = [cl[0], cl[1] + bob, cl[2]];
+      const pos = [eye[0] + rt[0] * cw[0] + up[0] * cw[1] + fw[0] * cw[2], eye[1] + rt[1] * cw[0] + up[1] * cw[1] + fw[1] * cw[2], eye[2] + rt[2] * cw[0] + up[2] * cw[1] + fw[2] * cw[2]];
+      const dying = s.dying == null ? 0 : P(t - s.dying, 0, 0.6);
+      out.push({
+        id: s.id, ver: s.gv, pos: s.geo.pos, nrm: s.geo.nrm, idx: s.geo.idx,
+        mpos: pos, rot: M4.m3(M4.mul(basis, local)), scale: 1 - dying * 0.6,
+        alpha: 1 - dying, emit: s.done == null ? 0.9 : lerp(0.9, 0.08, P(age, 0, 0.9)), face: 0.55,
+      });
+    }
+    return out;
+  }
+
+  /* st: { cur, prev, since, clock, now (s), yaw, pitch, mouse (NDC), look, ui, flash, gate, still,
+   *       cursor (fine pointer present), drawing, sel (node), failId, failAge, spin, dir }
    * Returns what is under the cursor: { kind: 'node' | 'region', i } or null. */
   function renderHome(st) {
     layout();
@@ -656,15 +766,15 @@
     const e = E.inOutCubic(P(st.since, 0, 1.4)), arc = Math.sin(Math.PI * e);
     // switching sections swoops the camera around the morph
     const swoop = st.still ? 0 : arc;
-    const yaw = lerp(A.yaw, B.yaw, e) + st.yaw + (st.still ? 0 : (c - 3) * 0.03) + swoop * 0.7 * (st.dir || 1);
-    const pitch = clamp(lerp(A.pitch, B.pitch, e) + st.pitch + swoop * 0.12, -0.35, 1.25);
+    const lk = st.look || [0, 0];
+    const yaw = lerp(A.yaw, B.yaw, e) + (st.still ? 0 : (c - 3) * 0.03 + lk[0] * 0.18) + swoop * 0.7 * (st.dir || 1);
+    const pitch = clamp(lerp(A.pitch, B.pitch, e) + lk[1] * 0.08 + swoop * 0.12, -0.35, 1.25);
     const tgt = L3(A.target, B.target, e);
     const shift = st.gate ? [0, 0] : PORT ? [0, 0.22 + 0.14 * st.ui] : [0.3 * st.ui, 0.02 * st.ui];
     const f = base(c);
     const pz = PORT && !st.gate ? lerp(A.mark ? 0.72 : 1, B.mark ? 0.72 : 1, e) : 1;
     camera(f, orbit(yaw, pitch, lerp(A.dist, B.dist, e) * pz * (1 + swoop * 0.15), tgt), tgt, lerp(A.fov, B.fov, e), 0, shift);
     f.aperture = 0.02;
-    const lk = st.look || [0, 0];
     Object.assign(f.particles, { a: A.shape, b: B.shape, ma: formM(A, c, lk, st.spin), mb: formM(B, c, lk, st.spin), mix: P(st.since, 0, 1.4), spread: 0.8, turb: 1.4, burst: st.still ? 0 : 0.5, gain: lerp(A.gain, B.gain, e) });
     const fail = st.failId >= 0 ? P(st.failAge, 0, 0.2) * (1 - P(st.failAge, 3.4, 3.9)) : 0;
     if (B.shape === I.GLOBE || A.shape === I.GLOBE) Object.assign(f.particles, { fail, failId: st.failId >= 0 ? st.failId : -1 });
@@ -675,20 +785,22 @@
     const ox = (st.mouse[0] - shift[0]) * th * (W / H), oy = (st.mouse[1] - shift[1]) * th;
     const dir = norm([fw[0] + rt[0] * ox + up[0] * oy, fw[1] + rt[1] * ox + up[1] * oy, fw[2] + rt[2] * ox + up[2] * oy]);
     const k = dot3(sub(tgt, f.eye), fw) / Math.max(1e-3, dot3(dir, fw));
-    f.mouse = { p: [f.eye[0] + dir[0] * k, f.eye[1] + dir[1] * k, f.eye[2] + dir[2] * k], r: f.focus * 0.12, f: st.force, well: st.well || 0 };
+    f.mouse = { p: [f.eye[0] + dir[0] * k, f.eye[1] + dir[1] * k, f.eye[2] + dir[2] * k], r: f.focus * 0.12, f: 0, well: 0 };
+    CAM = { th, shift };
+    if (!st.gate) f.strokes = inkFrame(st.now, f.eye, rt, up, fw);
 
     const markA = (A.mark ? 1 - P(st.since, 0, 0.5) : 0) + (B.mark ? P(st.since, 0.6, 1.4) : 0);
     if (markA > 0.001 && !st.gate) f.mark = signMark(c, Math.min(1, A.mark && B.mark ? 1 : markA), lk);
     f.bg.cone = (A.mark ? 1 - e : 0) * 0.7 + (B.mark ? e : 0) * 0.7; f.bg.coneCol = [0.2, 0.24, 0.13];
     f.bg.stars = 0.4;
     f.post.flash = st.flash || 0;
-    f.post.ca = 1 + swoop * 3 + (st.well || 0) * 2;
+    f.post.ca = 1 + swoop * 3;
     submit(f);
 
     if (st.gate) return null;
     const mx = (st.mouse[0] * 0.5 + 0.5) * W, my = (0.5 - st.mouse[1] * 0.5) * H;
     const settled = P(st.since, 1.2, 1.8) * st.ui;
-    let pick = null, hint = 'hold to gather · click to scatter';
+    let pick = null, hint = INK.list.length ? 'draw again' : 'draw anywhere';
 
     if (B.id === 'architect' && settled > 0) {
       const pts = SH.NODES.map((n) => { const q = project(n.p); return q[2] > 0 ? q : null; });
@@ -715,12 +827,12 @@
       if (st.failId >= 0 && st.failAge < 6.2) failLog(st.failId, st.failAge);
       hint = hv >= 0 ? `click to take region-${hv + 1} down` : 'click a region to break it';
     }
-    if (st.holding) hint = 'release to let go';
+    if (st.drawing) hint = 'release to make it 3D';
 
     corners(0.6 * st.ui);
     // a cursor that tells you what you can do
     if (st.cursor && st.ui > 0.5) {
-      const r = 14 + (st.well || 0) * 22 + (pick ? 8 : 0);
+      const r = (st.drawing ? 6 : 14) + (pick ? 8 : 0);
       ctx.strokeStyle = pick ? C.lime : 'rgba(243,240,232,.85)'; ctx.lineWidth = 2;
       dot(mx, my, r); ctx.stroke();
       ctx.fillStyle = C.lime; dot(mx, my, 3); ctx.fill();
@@ -746,7 +858,7 @@
     create(glCanvas, overlay) {
       glc = glCanvas; ov = overlay; ctx = ov.getContext('2d');
       glOK = EN.init(glc);
-      return { render, renderHome, ready };
+      return { render, renderHome, ready, beginStroke, addPoint, endStroke, clearInk, get inked() { return INK.list.some((x) => x.dying == null); } };
     },
   };
 })();
